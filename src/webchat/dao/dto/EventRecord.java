@@ -9,12 +9,13 @@ public class EventRecord {
 	@Column(name = "Id", isPrimaryKey = true)
 	private Integer id;
 	
-	@Column(name = "SourceId", isForeignKeyOf="webchat.dao.dto.EventRecord")
+	@Column(name = "SourceId", isForeignKeyOf="webchat.dao.dto.UserRecord")
 	private Integer sourceId;
 	
-	@Column(name = "TargetId", isForeignKeyOf="webchat.dao.dto.EventRecord")
+	@Column(name = "TargetId", isForeignKeyOf="webchat.dao.dto.UserRecord")
 	private Integer targetId;
 	
+        
         @Reference(foreignKeyField = "sourceId", foreignField = "username")
 	@Column(name = "SourceName")
 	private String sourceName;
@@ -33,6 +34,7 @@ public class EventRecord {
 	private Long timestamp;
 
 
+        
 	public EventRecord(String type, int srcId) {
 		super();
 		this.type = type;

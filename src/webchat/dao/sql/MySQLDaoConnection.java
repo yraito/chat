@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import webchat.dao.*;
 import webchat.dao.dto.AdminRecord;
 import webchat.dao.dto.UserRecord;
+import webchat.dao.dto.EventRecord;
 
 public class MySQLDaoConnection implements DaoConnection {
 
@@ -18,8 +19,8 @@ public class MySQLDaoConnection implements DaoConnection {
     static Mapping adminSelect = mapper.getMappingForSelect(AdminRecord.class);
     static Mapping userInsert = mapper.getMappingForInsert(UserRecord.class);
     static Mapping userSelect = mapper.getMappingForSelect(UserRecord.class);
-    static Mapping eventInsert = mapper.getMappingForInsert(UserRecord.class);
-    static Mapping eventSelect = mapper.getMappingForSelect(UserRecord.class);
+    static Mapping eventInsert = mapper.getMappingForInsert(EventRecord.class);
+    static Mapping eventSelect = mapper.getMappingForSelect(EventRecord.class);
 
     Connection conn;
     

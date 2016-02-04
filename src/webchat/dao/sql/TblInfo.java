@@ -55,7 +55,7 @@ public class TblInfo {
         for (int index = 0; index < getNumberOfJoins(); index++) {
             s += " LEFT JOIN " + getJoinedTableRealName(index) 
                     + " AS " + getJoinedTableAlias(index) 
-                    + " ON " + getJoinedOnFkCol(index)
+                    + " ON " + getMainTable() + "." + getJoinedOnFkCol(index)
                     + " = " + getJoinedTableAlias(index) + "." + getJoinedOnPkCol(index);
         }
         return s;

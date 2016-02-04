@@ -10,6 +10,10 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import webchat.dao.dto.Column;
 import webchat.dao.dto.Reference;
 import webchat.dao.dto.Table;
@@ -23,7 +27,9 @@ public class Mapper {
 
     public Mapping getMapping(Class<?> clazz, List<Field> fields) {
 
-        TreeMap<Field, ColInfo> colInfos = new TreeMap<>();
+        checkAnnoPresent(clazz, Table.class);
+        String mainTbl = clazz.getAnnotation(Table.class).name();
+        HashMap<Field, ColInfo> colInfos = new HashMap<>();
         TreeMap<String, String[]> joinInfos = new TreeMap<>();
         for (Field field : fields) {
             if (field.isAnnotationPresent(Reference.class)) {
@@ -35,12 +41,10 @@ public class Mapper {
                 }
             } else {
                 String fieldAlias = field.getAnnotation(Column.class).name();
-                ColInfo colInfo = new ColInfo(fieldAlias);
+                ColInfo colInfo = new ColInfo(fieldAlias, fieldAlias, mainTbl);
                 colInfos.put(field, colInfo);
             }
         }
-        checkAnnoPresent(clazz, Table.class);
-        String mainTbl = clazz.getAnnotation(Table.class).name();
         TblInfo tblInfo = new TblInfo(mainTbl);
         for (String[] joinInfo : joinInfos.values()) {
             tblInfo.addJoinedTable(joinInfo[0], joinInfo[1], joinInfo[2], joinInfo[3]);
@@ -56,14 +60,18 @@ public class Mapper {
             checkAnnoPresent(foreignKeyField, Column.class);
             String fieldAlias = refAnnoField.getAnnotation(Column.class).name();
             String fieldRealOwnerClass = foreignKeyField.getAnnotation(Column.class).isForeignKeyOf();
+            Class fieldRealOwnerClassClass = Class.forName(fieldRealOwnerClass);
             String foreignKeyName = foreignKeyField.getAnnotation(Column.class).name();
             String fieldRealOwnerAlias = getTableAlias(fieldRealOwnerClass, foreignKeyName);
-            Field fieldRealField = clazz.getDeclaredField(reference.foreignField());
+            System.out.println(clazz.getName() + ":" + reference.foreignField());
+            Field fieldRealField = fieldRealOwnerClassClass.getDeclaredField(reference.foreignField());
             String fieldRealName = fieldRealField.getAnnotation(Column.class).name();
             return new ColInfo(fieldAlias, fieldRealName, fieldRealOwnerAlias);
         } catch (NoSuchFieldException e) {
             throw new MappingException("Error resolving reference anno on field "
                     + refAnnoField + ". No such field", e);
+        } catch (ClassNotFoundException e) {
+            throw new MappingException("Error resolving foreign key owner class, no such class", e);
         }
 
     }
@@ -92,7 +100,7 @@ public class Mapper {
     }
 
     private String getPrimaryKeyColumn(String className) {
-        
+
         try {
             Class<?> clazz = Class.forName(className);
             checkAnnoPresent(clazz, Table.class);
@@ -140,6 +148,5 @@ public class Mapper {
             throw new MappingException("Missing anno " + annoClass + " on " + ae);
         }
     }
-
 
 }

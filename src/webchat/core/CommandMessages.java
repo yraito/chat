@@ -12,12 +12,13 @@ import webchat.core.command.KickCommand;
 import webchat.core.command.RevokeCommand;
 import webchat.core.command.DestroyCommand;
 import webchat.core.command.WhisperCommand;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import webchat.core.command.LoginCommand;
+import webchat.core.command.LogoutCommand;
 
 public class CommandMessages {
 	
@@ -32,12 +33,14 @@ public class CommandMessages {
 		commands.put("join", JoinCommand.class);
 		commands.put("kick", KickCommand.class);
 		commands.put("leave", LeaveCommand.class);
+                commands.put("login", LoginCommand.class);
 		commands.put("listrooms", ListRoomsCommand.class);
 		commands.put("listusers", ListUsersCommand.class);
 		commands.put("message", MessageCommand.class);
 		commands.put("revoke", RevokeCommand.class);
 		commands.put("status", StatusCommand.class);
 		commands.put("whisper", WhisperCommand.class);
+                commands.put("logout", LogoutCommand.class);
 	}
 	
 	/**

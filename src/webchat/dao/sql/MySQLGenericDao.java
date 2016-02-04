@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.slf4j.LoggerFactory;
 import webchat.dao.DaoException;
 import webchat.dao.Searcher;
@@ -22,13 +24,14 @@ import webchat.dao.sql.query.QueryParts;
 import static webchat.util.StringUtils.*;
 
 /**
- * Generic dao that uses mappings 
+ * Generic dao that uses mappings
+ *
  * @author Nick
  */
 public class MySQLGenericDao<T> {
 
-    	private final static org.slf4j.Logger logger = LoggerFactory.getLogger(MySQLGenericDao.class);
-	
+    private final static org.slf4j.Logger logger = LoggerFactory.getLogger(MySQLGenericDao.class);
+
     Mapping insertMapping;
     Mapping selectMapping;
     private Connection conn;
@@ -39,11 +42,20 @@ public class MySQLGenericDao<T> {
         this.insertMapping = insertMapping;
         this.selectMapping = selectMapping;
         this.conn = conn;
-        this.findFieldName = findFieldName;
         this.clazz = clazz;
+        if (findFieldName != null) {
+            try {
+                Field findField = clazz.getDeclaredField(findFieldName);
+                String findFieldRealName = insertMapping.getEquivColumn(findField).getRealName();
+                String findFieldTable = insertMapping.getEquivColumn(findField).getRealTableNameOrAlias();
+                this.findFieldName = findFieldTable + "." + findFieldRealName;
+            } catch (NoSuchFieldException e) {
+                throw new RuntimeException(findFieldName + " not a valid field", e);
+            }
+        }
+
     }
 
-    
     public void save(T t) throws DaoException {
 
         String table = insertMapping.getEquivTable().toString();

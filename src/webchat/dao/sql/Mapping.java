@@ -26,6 +26,9 @@ public class Mapping {
         this.clazz = clazz;
         this.equivTable = equivTable;
         this.map = map;
+        for (Field field : map.keySet()) {
+            field.setAccessible(true);
+        }
     }
     
     public Class<?> getClazz() {

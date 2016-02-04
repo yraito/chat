@@ -28,4 +28,5 @@ public class ListRoomsCommand extends CommandMessage {
         return ResultMessage.success(rs);
     }
 
+    //delegate persist to strategy? a. NullPersister or b.Config.persist
 }

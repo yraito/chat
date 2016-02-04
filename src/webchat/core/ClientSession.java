@@ -1,5 +1,6 @@
 package webchat.core;
 import java.io.IOException;
+import webchat.dao.dto.UserRecord;
 
 /**
  * An abstraction representing the server-side endpoint of a client-server connection, which
@@ -16,7 +17,7 @@ public interface ClientSession {
 	 * @return
 	 * 
 	 */
-	int getUserId();
+	Integer getUserId();
 	
 	/**
 	 * Username of this session's client
@@ -24,6 +25,12 @@ public interface ClientSession {
 	 */
 	String getUserName();
 	
+        /**
+         * Set user 
+         * @param userId
+         * @param username 
+         */
+        void setUser(UserRecord ur);
 	/**
 	 * Set a "session variable" associated with this client's session.
 	 * 

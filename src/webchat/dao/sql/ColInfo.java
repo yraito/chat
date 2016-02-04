@@ -17,9 +17,9 @@ public class ColInfo {
         this.name = name;
     }
 
-    public ColInfo(String name) {
+   /* public ColInfo(String name) {
         this.name = name;
-    }
+    } */
     
     String realName;
     String realTable;
@@ -42,7 +42,8 @@ public class ColInfo {
         if (realName == null) {
             return name;
         } else {
-            return realTable + "." + realName + " AS " + name;
+            //return realTable + "." + realName + " AS " + name;
+            return realTable + "." + realName;
         }
     }
 }
