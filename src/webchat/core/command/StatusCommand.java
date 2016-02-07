@@ -10,6 +10,9 @@ import webchat.core.ResultMessage;
 import webchat.core.RoomBean;
 import static webchat.util.StringUtils.isNullOrEmpty;
 import static webchat.core.Checks.checkArgs;
+import static webchat.core.Checks.checkArgs;
+import static webchat.core.Checks.checkArgs;
+import static webchat.core.Checks.checkArgs;
 
 /**
  * Update user's status
