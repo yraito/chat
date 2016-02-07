@@ -63,7 +63,7 @@ public abstract class CommandMessage implements Message{
 	protected String roomName;
 	protected String message;
 	protected List<String> otherArgs = new LinkedList<>();
-	protected long timeStamp;
+	protected long timeStamp = System.currentTimeMillis();
 
 	protected CommandMessage(String command, String tgt, String rm, String msg, String...arg) {
 		this.command = command;

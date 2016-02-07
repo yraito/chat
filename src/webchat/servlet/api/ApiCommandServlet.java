@@ -50,6 +50,7 @@ public class ApiCommandServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
+    
     ChatManager chatManager;
 
     @Override
@@ -61,7 +62,6 @@ public class ApiCommandServlet extends HttpServlet {
         }
     }
 
-    @Override
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.debug("doGet");
         process(req, resp, true);
@@ -69,7 +69,7 @@ public class ApiCommandServlet extends HttpServlet {
 
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        logger.debug("doPost");
+        logger.debug("doPost: Content-Type: {}", req.getContentType());
         boolean fromParams = ("application/x-www-form-urlencoded").equalsIgnoreCase(req.getContentType());
         process(req, resp, fromParams);
     }
@@ -117,7 +117,7 @@ public class ApiCommandServlet extends HttpServlet {
         String tgt = getFirstValue(paramMap, "target", false);
         String rm = getFirstValue(paramMap, "room", false);
         String msg = getFirstValue(paramMap, "message", false);
-        String[] args = getValues(paramMap, "args");
+        String[] args = getValues(paramMap, "args[]");
         CommandMessage cmdMsg = CommandMessages.newCommandMessage(cmd, tgt, rm, msg, args);
         logger.debug("Parsed CommandMessage from request params: {}", cmdMsg);
         if (cmdMsg == null) {

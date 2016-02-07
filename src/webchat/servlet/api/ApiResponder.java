@@ -1,7 +1,9 @@
 package webchat.servlet.api;
 
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.BufferedOutputStream;
 import javax.servlet.http.HttpServletRequest;
 
 import javax.servlet.http.HttpServletResponse;
@@ -49,7 +51,11 @@ public class ApiResponder {
         resp.setStatus(HttpServletResponse.SC_OK);
         OutputStream os = resp.getOutputStream();
         formatter.writeMessage(rm, os);
-        os.flush();
         os.close();
+    }
+    
+    public ObjectOutputStream respondOK() throws IOException{
+        resp.setStatus(HttpServletResponse.SC_OK);
+        return formatter.createWriter(new BufferedOutputStream(resp.getOutputStream()));
     }
 }

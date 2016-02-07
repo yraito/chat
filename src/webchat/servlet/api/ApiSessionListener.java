@@ -26,9 +26,12 @@ public class ApiSessionListener implements HttpSessionListener {
         ChatManager chatMgr = (ChatManager) httpSess.getServletContext().getAttribute(CHAT_MANAGER_KEY);
         if (chatMgr == null) {
             logger.error("No ChatManager attached to ServletContext");
-        } else {
+        } else if (HttpServletClientSession.getUserRecord(httpSess) != null){
             HttpServletClientSession clientSess = new HttpServletClientSession(httpSess);
+            logger.debug("Destroying session for {}", clientSess.getUserName());
             chatMgr.onEndSession(clientSess);
+        } else {
+            logger.debug("Destroying session, not logged in");
         }
     }
 

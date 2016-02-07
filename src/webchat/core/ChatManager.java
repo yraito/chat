@@ -83,6 +83,9 @@ public class ChatManager {
             resultMsg = ResultMessage.error(e.getMessage());
         } catch (DaoException e) {
             logger.error("DaoException: {}, {}", e.getMessage(), e.getCause());
+            if (resultMsg == null) {
+                resultMsg = ResultMessage.error(e.getMessage());
+            }
         } finally {
             closeQuietly(daoConnection);
         }
@@ -110,6 +113,7 @@ public class ChatManager {
      */
     public void onEndSession(ClientSession cs) {
         logger.debug("onEndSession: {}", cs.getUserName());
+        //null pointer
         String userName = cs.getUserName().toLowerCase();
         for (RoomBean r : chatRooms.values()) {
             String roomName = r.getName();

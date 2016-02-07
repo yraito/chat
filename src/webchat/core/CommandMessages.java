@@ -1,5 +1,6 @@
 package webchat.core;
 
+import java.util.Collection;
 import webchat.core.command.StatusCommand;
 import webchat.core.command.LeaveCommand;
 import webchat.core.command.CreateCommand;
@@ -77,4 +78,8 @@ public class CommandMessages {
 		}
 
 	}
+        
+        public static Map<String, Class<? extends CommandMessage>> getAllCommands() {
+            return commands;
+        }
 }

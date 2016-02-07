@@ -133,6 +133,7 @@ public class ApiStreamServlet extends HttpServlet {
             if (m != null) {
                 logger.debug("Fetched first message from queue: {}", m);
                 ArrayList<Message> msgList = new ArrayList<>();
+                msgList.add(m);
                 while ((m = msgQueue.poll()) != null) {
                     logger.debug("Fetched another message from queue: {}", m);
                     msgList.add(m);
