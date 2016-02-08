@@ -11,7 +11,6 @@ import webchat.client.blocking.BlockingChannel;
 import webchat.client.function.CreateFunctionHandler;
 import webchat.client.function.HelpFunctionHandler;
 import webchat.client.function.JoinFunctionHandler;
-import webchat.client.function.WeatherFunctionHandler;
 import webchat.util.StringUtils;
 
 public class FunctionProcessor {
@@ -25,7 +24,6 @@ public class FunctionProcessor {
 	public FunctionProcessor() {
 		addHandler(new JoinFunctionHandler());
 		addHandler(new CreateFunctionHandler());
-		addHandler(new WeatherFunctionHandler());
 		addHandler(new HelpFunctionHandler(this)); //Escaped this
 		
 	}
