@@ -8,7 +8,7 @@ import webchat.dao.Where;
 public class DaoUtils {
 
 	public static <T> Where<T> whereAny(Searcher<T> searcher, Function<String, Where<T>> func, String...keywords) {
-		if ( keywords.length == 0 ) {
+		if ( keywords == null || keywords.length == 0 ) {
 			return searcher.where1is1();
 		}
 		
@@ -21,7 +21,7 @@ public class DaoUtils {
 	}
 	
 	public static <T> Where<T> whereAll(Searcher<T> searcher, Function<String, Where<T>> func, String...keywords) {
-		if ( keywords.length == 0 ) {
+		if ( keywords == null || keywords.length == 0 ) {
 			return searcher.where1is1();
 		}
 		

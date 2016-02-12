@@ -8,7 +8,7 @@ import webchat.dao.dto.AdminRecord;
 public class MySQLAdminDao extends MySQLGenericDao<AdminRecord> implements AdminDao {
 	
     public MySQLAdminDao(Mapping selectMapping, Connection conn) {
-        super(null, selectMapping, conn, "username", AdminRecord.class);
+        super(selectMapping, selectMapping, conn, "username", AdminRecord.class);
     }
 	
 }

@@ -9,6 +9,7 @@ import webchat.core.ClientSession;
 import webchat.core.CommandMessage;
 import webchat.core.ResultMessage;
 import webchat.core.RoomBean;
+import webchat.core.RoomSnapshot;
 import static webchat.util.StringUtils.isNullOrEmpty;
 
 /**
@@ -46,7 +47,7 @@ public class JoinCommand extends CommandMessage {
             }
 
             RoomBean room = mgr.getRoom(roomNameLower);
-            RoomBean roomSnapshot = new RoomBean(room);
+            RoomSnapshot roomSnapshot = new RoomSnapshot(mgr, room);
             if (!srcInRoom) {
                 room.addUser(srcName);
                 clearOtherArgs();

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
@@ -11,6 +12,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.annotation.WebServlet;
 
 import webchat.dao.DaoConnection;
 import webchat.dao.DaoConnectionFactory;
@@ -24,6 +26,9 @@ import webchat.util.DaoUtils;
 
 import static webchat.util.StringUtils.*;
 
+@WebServlet(
+urlPatterns={"/admin/messages", "/admin/events", "/admin/users"}
+)
 public class AdminServlet extends HttpServlet {
 
     /**
@@ -61,6 +66,9 @@ public class AdminServlet extends HttpServlet {
     }
 
     private static Long parseDate(String dateStr, long defaultValue) {
+        if (dateStr == null) {
+            return defaultValue;
+        }
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         try {
             return sdf.parse(dateStr).getTime();
@@ -122,18 +130,18 @@ public class AdminServlet extends HttpServlet {
         }
         List<?> queryResults = null;
         String viewPath = null;
-        if (relativePath.startsWith("/messages")) {
+        if (relativePath.startsWith("/admin/messages")) {
             queryResults = searchMessages(req, resp);
-            viewPath = "messages.jsp";
-        } else if (relativePath.startsWith("/events")) {
+            viewPath = "/WEB-INF/messagesearch.jsp";
+        } else if (relativePath.startsWith("/admin/events")) {
             queryResults = searchEvents(req, resp);
-            viewPath = "events.jsp";
-        } else if (relativePath.startsWith("/users")) {
+            viewPath = "/WEB-INF/eventsearch.jsp";
+        } else if (relativePath.startsWith("/admin/users")) {
             queryResults = searchUsers(req, resp);
-            viewPath = "users.jsp";
+            viewPath = "/WEB-INF/users.jsp";
         }
         if (viewPath != null) {
-            req.setAttribute("results", queryResults);
+            req.setAttribute("records", queryResults);            
             req.getRequestDispatcher(viewPath).forward(req, resp);
         } else {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -141,21 +149,22 @@ public class AdminServlet extends HttpServlet {
     }
 
     private List<EventRecord> searchMessages(HttpServletRequest req, HttpServletResponse resp) throws DaoException {
-        String[] keywords = splitQuoted(req.getParameter("keywords"));
+        String[] keywords = splitQuoted(req.getParameter("keywords[]"));
         String keywordQualifier = req.getParameter("keywordqualifier");
-        String[] emoticons = req.getParameterValues("emoticons");
+        String[] emoticons = req.getParameterValues("emoticons[]");
         String emoticonQualifier = req.getParameter("emoticonqualifier");
-        String[] roomNames = splitQuoted(req.getParameter("roomNames"));
-        String[] sourceNames = splitQuoted(req.getParameter("sourcenames"));
-        String[] targetNames = splitQuoted(req.getParameter("targetnames"));
-        String[] messageTypes = req.getParameterValues("types");
+        String[] roomNames = splitQuoted(req.getParameter("roomnames[]"));
+        String[] sourceNames = splitQuoted(req.getParameter("sourcenames[]"));
+        String[] targetNames = splitQuoted(req.getParameter("targetnames[]"));
+        String[] messageTypes = req.getParameterValues("types[]");
         if (messageTypes == null || messageTypes.length == 0) {
             messageTypes = new String[]{"message", "whisper"};
         }
         Long startDate = parseDate(req.getParameter("startdate"), 1L);
         Long endDate = parseDate(req.getParameter("enddate"), System.currentTimeMillis());
         Field sortBy = parseField(EventRecord.class, req.getParameter("sortby"), "timestamp");
-        int startIndex = parseInt(req.getParameter("start"), 0, Integer.MAX_VALUE, 0);
+        int startIndex = parseInt(req.getParameter("startindex"), 0, Integer.MAX_VALUE, 0);
+        int perPage = parseInt(req.getParameter("perpage"), 1, 500,  25);
         int maxRecords = 1000;
         Class<EventRecord> clazz = EventRecord.class;
 
@@ -163,7 +172,7 @@ public class AdminServlet extends HttpServlet {
             Searcher<EventRecord> searcher = daoConn.getEventDao().searcher();
             Where<EventRecord> msgWhere = whereContainsAnyOrAll(searcher, clazz, "message", keywordQualifier, keywords);
             Where<EventRecord> emoWhere = whereContainsAnyOrAll(searcher, clazz, "message", emoticonQualifier, emoticons);
-            Where<EventRecord> roomWhere = whereMatchesAny(searcher, clazz, "room", roomNames);
+            Where<EventRecord> roomWhere = whereMatchesAny(searcher, clazz, "roomName", roomNames);
             Where<EventRecord> srcWhere = whereMatchesAny(searcher, clazz, "sourceName", sourceNames);
             Where<EventRecord> tgtWhere = whereMatchesAny(searcher, clazz, "targetName", targetNames);
             Where<EventRecord> typeWhere = whereMatchesAny(searcher, clazz, "type", messageTypes);
@@ -176,25 +185,33 @@ public class AdminServlet extends HttpServlet {
                     .and(tgtWhere)
                     .and(typeWhere)
                     .and(dateWhere);
-            return fullWhere.doQuery(sortBy, startIndex, maxRecords);
+            List<EventRecord> eventRecords = fullWhere.doQuery(sortBy, startIndex, maxRecords);
+            if (startIndex >= eventRecords.size()) {
+                return Collections.emptyList();
+            }
+            int endIndex = Math.min(startIndex + perPage, eventRecords.size());
+            req.setAttribute("startIndex", startIndex);
+            req.setAttribute("numResults", eventRecords.size());
+            return eventRecords.subList(startIndex, endIndex);
         }
     }
 
     private List<EventRecord> searchEvents(HttpServletRequest req, HttpServletResponse resp) throws DaoException {
-        String[] roomNames = splitQuoted(req.getParameter("roomNames"));
-        String[] sourceNames = splitQuoted(req.getParameter("sourcenames"));
-        String[] targetNames = splitQuoted(req.getParameter("targetnames"));
-        String[] messageTypes = req.getParameterValues("types");
+        String[] roomNames = splitQuoted(req.getParameter("roomnames[]"));
+        String[] sourceNames = splitQuoted(req.getParameter("sourcenames[]"));
+        String[] targetNames = splitQuoted(req.getParameter("targetnames[]"));
+        String[] messageTypes = req.getParameterValues("types[]");
         Long startDate = parseDate(req.getParameter("startdate"), 1L);
         Long endDate = parseDate(req.getParameter("enddate"), System.currentTimeMillis());
         Field sortBy = parseField(EventRecord.class, req.getParameter("sortby"), "timestamp");
         int startIndex = parseInt(req.getParameter("start"), 0, Integer.MAX_VALUE, 0);
+        int perPage = parseInt(req.getParameter("perpage"), 1, 500,  25);
         int maxRecords = 1000;
         Class<EventRecord> clazz = EventRecord.class;
 
         try (DaoConnection daoConn = daoFactory.openDaoConnection()) {
             Searcher<EventRecord> searcher = daoConn.getEventDao().searcher();
-            Where<EventRecord> roomWhere = whereMatchesAny(searcher, clazz, "room", roomNames);
+            Where<EventRecord> roomWhere = whereMatchesAny(searcher, clazz, "roomName", roomNames);
             Where<EventRecord> srcWhere = whereMatchesAny(searcher, clazz, "sourceName", sourceNames);
             Where<EventRecord> tgtWhere = whereMatchesAny(searcher, clazz, "targetName", targetNames);
             Where<EventRecord> typeWhere = whereMatchesAny(searcher, clazz, "type", messageTypes);
@@ -208,7 +225,14 @@ public class AdminServlet extends HttpServlet {
                     .and(typeWhere)
                     .and(dateWhere)
                     .and(noMsgWhere);
-            return fullWhere.doQuery(sortBy, startIndex, maxRecords);
+                        List<EventRecord> eventRecords = fullWhere.doQuery(sortBy, startIndex, maxRecords);
+            if (startIndex >= eventRecords.size()) {
+                return Collections.emptyList();
+            }
+            int endIndex = Math.min(startIndex + perPage, eventRecords.size());
+            req.setAttribute("startIndex", startIndex);
+            req.setAttribute("numResults", eventRecords.size());
+            return eventRecords.subList(startIndex, endIndex);
         }
     }
 
@@ -220,6 +244,7 @@ public class AdminServlet extends HttpServlet {
         Long endDate = parseDate(req.getParameter("enddate"), System.currentTimeMillis());
         Field sortBy = parseField(EventRecord.class, req.getParameter("sortby"), "timestamp");
         int startIndex = parseInt(req.getParameter("start"), 0, Integer.MAX_VALUE, 0);
+        int perPage = parseInt(req.getParameter("perpage"), 1, 500,  25);
         int maxRecords = 1000;
         Class<UserRecord> clazz = UserRecord.class;
 
@@ -227,14 +252,21 @@ public class AdminServlet extends HttpServlet {
             Searcher<UserRecord> searcher = daoConn.getUserDao().searcher();
             Where<UserRecord> userWhere = whereMatchesAny(searcher, clazz, "username", usernames);
             Where<UserRecord> ownerWhere = whereMatchesAny(searcher, clazz, "ownerName", ownerNames);
-            Where<UserRecord> typeWhere = whereMatchesAny(searcher, clazz, "type", acctTypes);
+            //Where<UserRecord> typeWhere = whereMatchesAny(searcher, clazz, "type", acctTypes);
             Where<UserRecord> dateWhere = searcher.whereBtw(parseField(clazz, "timestamp", null), startDate, endDate);
             Where<UserRecord> fullWhere
                     = userWhere
                     .and(ownerWhere)
                     .and(typeWhere)
                     .and(dateWhere);
-            return fullWhere.doQuery(sortBy, startIndex, maxRecords);
+            List<UserRecord> eventRecords = fullWhere.doQuery(sortBy, startIndex, maxRecords);
+            if (startIndex >= eventRecords.size()) {
+                return Collections.emptyList();
+            }
+            int endIndex = Math.min(startIndex + perPage, eventRecords.size());
+            req.setAttribute("startIndex", startIndex);
+            req.setAttribute("numResults", eventRecords.size());
+            return eventRecords.subList(startIndex, endIndex);
         }
     }
 

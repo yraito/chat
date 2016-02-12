@@ -145,7 +145,7 @@ public class MySQLWhere<T> implements Where<T> {
 
                     T t = clazz.newInstance();
                     for (Field f : mapping.getSelectedFields()) {
-                        String colName = mapping.getEquivColumn(f).getName();
+                        String colName = mapping.getEquivColumn(f).toString();
                         Object o = rs.getObject(colName);
                         f.set(t, o);
                     }

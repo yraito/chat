@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app
+    xmlns="http://java.sun.com/xml/ns/j2ee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_5.xsd"
+    version="2.5">
+  <listener>
+    <listener-class>webchat.servlet.api.ApiServletListener</listener-class>
+  </listener>
+
+  <listener>
+    <listener-class>webchat.servlet.api.ApiSessionListener</listener-class>
+  </listener>
+
+  
+  <servlet>
+    <servlet-name>StreamServlet</servlet-name>
+    <servlet-class>webchat.servlet.api.ApiStreamServlet</servlet-class>
+    <load-on-startup>2</load-on-startup>
+  </servlet>
+  
+  <servlet>
+    <servlet-name>CommandServlet</servlet-name>
+    <servlet-class>webchat.servlet.api.ApiCommandServlet</servlet-class>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>StreamServlet</servlet-name>
+    <url-pattern>/stream</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>CommandServlet</servlet-name>
+    <url-pattern>/command</url-pattern>
+  </servlet-mapping>
+</web-app>  

@@ -40,6 +40,9 @@ public class StringUtils {
 	 * @return
 	 */
 	public static String[] splitQuoted(String msg) {
+                if (msg == null) {
+                    return new String[0];
+                }
 		Matcher m = p.matcher(msg);
 		ArrayList<String> lst = new ArrayList<>();
 		while (m.find()) {
@@ -99,10 +102,13 @@ public class StringUtils {
 		}
 	}
 
-        public static String newString(List<?> objs) {
-            StringJoiner sj = new StringJoiner(",");
+        public static String newString(List<?> objs, String delimiter) {
+            StringJoiner sj = new StringJoiner(delimiter);
             objs.stream().forEach(t->sj.add(t.toString()));
             return sj.toString();
+        }
+        public static String newString(List<?> objs) {
+            return newString(objs, ",");
         }
         
         public static String newString(String s, int n) {

@@ -29,6 +29,7 @@ public class Mapper {
 
         checkAnnoPresent(clazz, Table.class);
         String mainTbl = clazz.getAnnotation(Table.class).name();
+        Field pkField = null;
         HashMap<Field, ColInfo> colInfos = new HashMap<>();
         TreeMap<String, String[]> joinInfos = new TreeMap<>();
         for (Field field : fields) {
@@ -40,6 +41,9 @@ public class Mapper {
                     joinInfos.put(joinInfo[0], joinInfo);
                 }
             } else {
+                if (field.getAnnotation(Column.class).isPrimaryKey()) {
+                    pkField = field;
+                }
                 String fieldAlias = field.getAnnotation(Column.class).name();
                 ColInfo colInfo = new ColInfo(fieldAlias, fieldAlias, mainTbl);
                 colInfos.put(field, colInfo);
@@ -49,7 +53,7 @@ public class Mapper {
         for (String[] joinInfo : joinInfos.values()) {
             tblInfo.addJoinedTable(joinInfo[0], joinInfo[1], joinInfo[2], joinInfo[3]);
         }
-        return new Mapping(clazz, tblInfo, colInfos);
+        return new Mapping(clazz, tblInfo, pkField, colInfos);
     }
 
     private ColInfo getColInfo(Class<?> clazz, Field refAnnoField) {

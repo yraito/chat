@@ -13,15 +13,23 @@ public class ResultMessage implements Message{
 	}
 	
 	public static ResultMessage success() {
-		return new ResultMessage(ResultType.SUCCESS, null, "");
+		return new ResultMessage(ResultType.SUCCESS, null, null);
 	}
 	
+        public static ResultMessage noop(Object o) {
+            return new ResultMessage(ResultType.NOOP, null, o);
+        }
+        
+        public static ResultMessage noop() {
+            return new ResultMessage(ResultType.NOOP, null, null);
+        }
+        
 	public static ResultMessage error(String err) {
 		return new ResultMessage(ResultType.FAILURE, err, null);
 	}
 	
 	public enum ResultType {
-		SUCCESS, FAILURE
+		SUCCESS, FAILURE, NOOP
 	}
 	
 	private ResultType type;
@@ -57,6 +65,10 @@ public class ResultMessage implements Message{
 	public Object getResult() {
 		return res;
 	}
+        
+        public ResultType getResultType() {
+            return type;
+        }
 
 	@Override
 	public String toString() {

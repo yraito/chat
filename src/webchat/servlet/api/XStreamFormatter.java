@@ -27,6 +27,9 @@ public class XStreamFormatter implements Formatter {
         initCommandMessage();
         xstream.alias("room", RoomBean.class);
         xstream.alias("roomInfo", RoomInfo.class);
+        xstream.alias("roomSnapshot", RoomSnapshot.class);
+        xstream.alias("user", RoomSnapshot.RoomUser.class);
+        xstream.addImplicitCollection(RoomSnapshot.class, "users");
         xstream.registerConverter(new RoomBeanConverter());
 
     }
@@ -74,6 +77,7 @@ public class XStreamFormatter implements Formatter {
         Message m1 = new KickCommand("someuser", "someroom", "because");
         Formatter f = new XStreamFormatter();
 
+        
     }
 
 }

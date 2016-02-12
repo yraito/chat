@@ -153,6 +153,7 @@ public class ChatManager {
         //make immutable
     }
 
+    
     /**
      * Get a list of RoomInfos, abridged versions of RoommBeans
      *

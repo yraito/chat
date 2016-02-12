@@ -115,6 +115,37 @@ public class MySQLGenericDao<T> {
             throw new DaoException("Exception finding " + s, e);
         }
     }
+    
+    public void modify(T t) throws DaoException {
+        
+        String table = insertMapping.getEquivTable().toString();
+        Field pkField = insertMapping.getPrimaryKeyField();
+        Map<String, Object> row = insertMapping.convertToRow(t);
+        if (pkField != null) {
+            String pkFieldCol = insertMapping.getEquivColumn(pkField).getName();
+            row.remove(pkFieldCol);
+            logger.debug("modify {}. Ignoring primary key col {}", t, pkFieldCol);
+        }
+        List<String> colList = new ArrayList<>(row.keySet());
+        List<String> setStmts = new ArrayList<>();
+        for (String col : colList) {
+            setStmts.add("SET " + col + " = ?");
+        }
+        String updateString = "UPDATE " + table + " " + newString(setStmts);
+        try (PreparedStatement pstmt = conn.prepareStatement(updateString)) {
+            logger.debug("modify {} : {}", t, updateString);
+            for (int colIndex = 0; colIndex < colList.size(); colIndex++) {
+                int paramIndex = colIndex + 1;
+                String colName = colList.get(colIndex);
+                Object obj = row.get(colName);
+                pstmt.setObject(paramIndex, obj);
+            }
+            int nrows = pstmt.executeUpdate();
+            assert nrows == 1;
+        } catch(SQLException e) {
+            throw new DaoException("Exception modifying " + t, e);
+        }
+    }
 
     public Searcher<T> searcher() {
         String cols = "*";

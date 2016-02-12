@@ -1,0 +1,144 @@
+<html>
+<body>
+
+
+
+	<div id = "header">
+		
+		<h1>
+			MyChat <small>Http Web Chat</small>
+		</h1>
+		<button class="btn btn-default" type="button">
+			My Account
+		</button>
+  		
+	</div>
+
+
+	<nav id = "nav">
+
+			<ul class="nav navbar-nav">
+				<li class="active">
+					<a href="#">Link</a>
+				</li>
+				<li>
+					<a href="#">Link</a>
+				</li>
+
+			</ul>
+	</nav>
+
+
+	<div class = "chat-content">
+		<div class="chat-sidebar">
+			<div class = "sidebar-controls">
+				<label for="statusSelect">Me: </label>
+				<select name ="statusSelect">
+					<option>online</option>
+					<option>away</option>
+					<option>busy</option>
+					<option>hiding</option>
+				</select>
+				<button>Destroy</button>
+				<button>Hide</button>
+			</div>
+			<div><span class="userCount">56</span> users in room</div>
+			<table></table>
+		</div>
+		<div class="chat-messagepanel"></div>
+		<div class="chat-controlpanel"></div>
+		<div class="chat-textpanel">
+
+			<textarea placeholder="Enter message"></textarea>
+			<button>Send</button>
+			<button>Emo</button>
+		</div>
+	</div>
+	<script type="text/javascript" src="jquery-1.12.0.min.js"></script>
+	<script type="text/javascript" src="jquery-ui.min.js"></script>
+	<script>
+		
+	</script>
+	</body>
+<style>
+
+	* {
+		box-sizing:border-box;
+	}
+	html, body {
+		min-height: 100%;
+		height : 100%;
+		position: relative;
+	}
+
+	.chat-content {
+		position : relative;
+		height: 100%;
+		left: 0px;
+		top: 0px;
+	}
+
+	.chat-content div{
+	 	border-style: solid;
+    	border-color: gray;
+    	border-width: 1px;
+	}
+
+	.chat-sidebar {
+		float: right;
+		width:20%;
+		height : 100%;
+	}
+
+	.chat-messagepanel {
+		top:0px;
+		left: 0px;
+		position: absolute;
+		height : 92%;
+		width: 80%;
+	}
+
+	.chat-controlpanel {
+		top:80%;
+		left: 0%;
+		position: absolute;
+		height: 10%;
+		width: 80%;
+		display: none;
+	}
+	.chat-textpanel {
+		top:92%;
+		left:0%;
+		position: absolute;
+		height: 8%;
+		width: 80%;
+	}
+
+	.chat-textpanel>textarea {
+		position: relative;
+		display: inline;
+		left::0px;
+		top: 0px;
+		height: 100%;
+		width: 86%;
+	}
+	.chat-textpanel > button {
+		width:7%;
+		height: 100%;
+		top : 0px;
+		left: auto;
+		float : right;
+	}
+
+    #header h1 {
+    	display : inline;
+    }
+    #header button{
+    	float : right;
+    }
+    nav li {
+    	display : inline;
+    }
+
+</style>
+</html>

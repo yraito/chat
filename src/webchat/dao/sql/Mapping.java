@@ -20,11 +20,13 @@ public class Mapping {
     
     Class<?> clazz;
     TblInfo equivTable;
+    Field pkField;
     Map<Field, ColInfo> map;
     
-    Mapping(Class<?> clazz, TblInfo equivTable, Map<Field, ColInfo> map) {
+    Mapping(Class<?> clazz, TblInfo equivTable, Field pkField, Map<Field, ColInfo> map) {
         this.clazz = clazz;
         this.equivTable = equivTable;
+        this.pkField = pkField;
         this.map = map;
         for (Field field : map.keySet()) {
             field.setAccessible(true);
@@ -39,6 +41,9 @@ public class Mapping {
         return equivTable;
     }
     
+    public Field getPrimaryKeyField() {
+        return pkField;
+    }
     public Collection<Field> getSelectedFields() {
         return map.keySet();
     }

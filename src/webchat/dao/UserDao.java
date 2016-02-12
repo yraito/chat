@@ -6,6 +6,8 @@ import webchat.dao.dto.UserRecord;
 public interface UserDao {
 		
 	void save(UserRecord user) throws DaoException;
+        
+        void modify(UserRecord user) throws DaoException;
 	
 	UserRecord find(String name) throws DaoException;
 
