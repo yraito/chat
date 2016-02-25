@@ -11,5 +11,5 @@ public class MySQLUserDao extends MySQLGenericDao<UserRecord> implements UserDao
         super(insertMapping, selectMapping, conn, "username", UserRecord.class);
     }
 
-
+    
 }

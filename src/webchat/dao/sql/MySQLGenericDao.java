@@ -120,18 +120,21 @@ public class MySQLGenericDao<T> {
         
         String table = insertMapping.getEquivTable().toString();
         Field pkField = insertMapping.getPrimaryKeyField();
+        String pkFieldCol = null;
+        Object pkValue = null;
         Map<String, Object> row = insertMapping.convertToRow(t);
         if (pkField != null) {
-            String pkFieldCol = insertMapping.getEquivColumn(pkField).getName();
-            row.remove(pkFieldCol);
+            pkFieldCol = insertMapping.getEquivColumn(pkField).toString();
+            pkValue = row.remove(pkFieldCol);
             logger.debug("modify {}. Ignoring primary key col {}", t, pkFieldCol);
         }
         List<String> colList = new ArrayList<>(row.keySet());
         List<String> setStmts = new ArrayList<>();
         for (String col : colList) {
-            setStmts.add("SET " + col + " = ?");
+            setStmts.add(col + " = ?");
         }
-        String updateString = "UPDATE " + table + " " + newString(setStmts);
+        String updateString = "UPDATE " + table + " SET " + newString(setStmts);
+        updateString += " WHERE " + pkFieldCol + " = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(updateString)) {
             logger.debug("modify {} : {}", t, updateString);
             for (int colIndex = 0; colIndex < colList.size(); colIndex++) {
@@ -140,10 +143,13 @@ public class MySQLGenericDao<T> {
                 Object obj = row.get(colName);
                 pstmt.setObject(paramIndex, obj);
             }
+            pstmt.setObject(colList.size() + 1, pkValue);
             int nrows = pstmt.executeUpdate();
             assert nrows == 1;
         } catch(SQLException e) {
-            throw new DaoException("Exception modifying " + t, e);
+            e.printStackTrace();
+            throw new DaoException("Exception modifying  " + t, e);
+            
         }
     }
 

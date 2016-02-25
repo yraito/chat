@@ -25,6 +25,16 @@ public class JoinCommand extends CommandMessage {
     public JoinCommand(String rm) {
         super("join", null, rm, null);
     }
+    
+    public  JoinCommand(JoinCommand thatCmd) {
+        super("join", null, thatCmd.getRoomName(), null);
+        if (thatCmd.getArg(0) != null) {
+            this.addArg(thatCmd.getArg(0));
+        }
+        if (thatCmd.getSourceName() != null) {
+            this.setSourceName(thatCmd.getSourceName());
+        }
+    }
 
     public JoinCommand() {
 
@@ -48,10 +58,19 @@ public class JoinCommand extends CommandMessage {
 
             RoomBean room = mgr.getRoom(roomNameLower);
             RoomSnapshot roomSnapshot = new RoomSnapshot(mgr, room);
+            JoinCommand thatCmd = new JoinCommand(this);
+            thatCmd.setAttachment(roomSnapshot);
+            thatCmd.clearOtherArgs();
+            thatCmd.addArg(mgr.getUserStatus(srcName).getString());
+            mgr.dispatchMessage(thatCmd, cs);
             if (!srcInRoom) {
                 room.addUser(srcName);
                 clearOtherArgs();
-                mgr.dispatchMessage(this, roomNameLower);
+                addArg(mgr.getUserStatus(srcName).getString());
+                mgr.dispatchMessage(this, roomNameLower, cs);
+               
+            } else {
+                super.persistable = false;
             }
             return ResultMessage.success(roomSnapshot);
         } finally {

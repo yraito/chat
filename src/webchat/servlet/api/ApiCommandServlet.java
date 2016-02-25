@@ -70,8 +70,7 @@ public class ApiCommandServlet extends HttpServlet {
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         logger.debug("doPost: Content-Type: {}", req.getContentType());
-        boolean fromParams = ("application/x-www-form-urlencoded").equalsIgnoreCase(req.getContentType());
-        process(req, resp, fromParams);
+        process(req, resp, true);
     }
 
     /**

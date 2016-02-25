@@ -20,9 +20,9 @@
             <input type="text" name="keywords[]" maxlength=300 />
             <br />
             <label>All</label>
-            <input type="radio" name="keywordqualifier" value="all">
+            <input type="radio" name="keywordsall" value="true">
             <label>Any</label>
-            <input type="radio" name="keywordqualifier" value="any">
+            <input type="radio" name="keywordsall" value="false" checked="checked">
         </div>
 
         <h3>Emoticons</h3>
@@ -33,8 +33,8 @@
                     <input type="checkbox" name="emoticons[]" id="emoticon${loop.index}" value="${emoticon.code}">
                 </c:forEach>
             </div>
-            <input type="radio" name="emoticonqualifier" value="all">All
-            <input type="radio" name="emoticonqualifier" value="any">Any
+            <input type="radio" name="emoticonsall" value="true">All
+            <input type="radio" name="emoticonsall" value="false" checked="checked">Any
         </div>
 
         <h3>Rooms</h3>
@@ -57,6 +57,12 @@
             <input type="checkbox" name="types[]" value="message" >Message
             <input type="checkbox" name="types[]" value="whisper" >Whisper
         </div>
+        
+        <h3>Timestamp</h3>
+        <div>
+            <input type="datetime-local" name="startdate" value="2016-01-31T20:55:55">Start
+            <input type="datetime-local" name="enddate" value="2016-02-31T20:55:55"> End
+        </div>
 
     </jsp:attribute>
 
@@ -72,7 +78,6 @@
                 <tr>
                     <th>Time</th>
                     <th>Room</th>
-                    <th>Type</th>
                     <th>Source</th>
                     <th>Target</th>
                     <th>Message</th>
@@ -81,9 +86,8 @@
             <tbody>
                 <c:forEach var="eventRecord" items="${records}">
                     <tr>
-                        <td>${eventRecord.timestamp}</td>
+                        <td><t:datetime timeMillis="${eventRecord.timestamp}" /></td>
                         <td>${eventRecord.roomName}</td>
-                        <td>${eventRecord.type}</td>
                         <td>${eventRecord.sourceName}</td>
                         <td>${eventRecord.targetName}</td>
                         <td>${eventRecord.message}</td>

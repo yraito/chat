@@ -1,13 +1,27 @@
 package webchat.client.blocking;
 
-import webchat.core.*;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
-public interface EventManager {
+public class EventManager {
+
+        List<EventListener> els = Collections.synchronizedList(new LinkedList<>());
         
-	void addListener(String room, ChannelListener el);
+	public void addListener(EventListener el) {
+            if (!els.contains(el)) {
+                els.add(el);
+            }
+        }
 	
-	void removeListener(String room, ChannelListener el);
+	void removeListener(EventListener el) {
+            els.remove(el);
+        }
         
-        void removeListeners(String room);
+        void dispatch(Event e) {
+            for (EventListener el : els) {
+                el.onEvent(e);
+            }
+        }
 	
 }

@@ -64,6 +64,8 @@ public abstract class CommandMessage implements Message{
 	protected String message;
 	protected List<String> otherArgs = new LinkedList<>();
 	protected long timeStamp = System.currentTimeMillis();
+        protected Object attachment;
+        protected boolean persistable = true;
 
 	protected CommandMessage(String command, String tgt, String rm, String msg, String...arg) {
 		this.command = command;
@@ -160,6 +162,14 @@ public abstract class CommandMessage implements Message{
 	public void clearArgs() {
 		otherArgs.clear();
 	}
+        
+        public Object getAttachment() {
+            return attachment;
+        }
+        
+        public void setAttachment(Object attachment) {
+            this.attachment = attachment;
+        }
 
 	@Override
 	public String toString() {
@@ -174,6 +184,10 @@ public abstract class CommandMessage implements Message{
 	
 	public void persist(int senderId, DaoConnection dc, ChatManager mgr) throws DaoException{
 	
+                if (!persistable) {
+                    logger.debug("!persistable, not saving CommandMessage {} from {}", command, senderId);
+                    return;
+                }
 		logger.debug("Preparing to save CommandMessage from id={} as EventRecord", senderId);
 		EventRecord ge = new EventRecord(command, senderId);
 		

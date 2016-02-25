@@ -1,5 +1,8 @@
 package webchat.client.agent;
 
+
+import webchat.servlet.api.*;
+
 public class ClientConfig {
 
 	String userName;
@@ -13,6 +16,7 @@ public class ClientConfig {
 	int port = 8080;
 	long connectTimeoutMs = 10000;
 	long respTimeoutMs = 10000;
+        Formatter formatter = new XStreamFormatter();
 	
 	String rootUrl() {
 		return "http://" + host + ":" + port + webAppPath;

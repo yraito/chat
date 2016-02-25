@@ -4,16 +4,42 @@
  * and open the template in the editor.
  */
 package webchat.client.blocking;
-
+import webchat.core.*;
 /**
  *
  * @author Nick
  */
-public interface SessionListener {
+public class SessionListener implements EventListener{
+        @Override
+    public void onEvent(Event e) {
+        if (e instanceof SessionEvent) {
+            SessionEvent se = (SessionEvent) e;
+            BlockingSession sess = se.getSession();
+            BlockingRoom room = se.getRoom();
+            switch(se.getEventType()) {
+                case JOIN_ROOM:
+                    onJoinRoom(sess, room);
+                    break;
+                case LEAVE_ROOM:
+                    onLeaveRoom(sess, room);
+                    break;
+                case CHANGE_STATUS:
+                    onStatusChange(sess, sess.getUserStatus());
+                    break;
+                case CLOSE_SESSION:
+                    onDisconnect(sess);
+                    break;
+            }
+        }
+    }
     
-    default void onJoinChannel(BlockingChannel channel) {  }
+    public void onJoinRoom(BlockingSession sess, BlockingRoom room) {  }
     
-    default void onLeaveChannel(BlockingChannel channel) {  }
+    public void onLeaveRoom(BlockingSession sess, BlockingRoom channel) {  }
     
-    default void onDisconnect() { }
+    public void onStatusChange(BlockingSession sess, UserStatus status) { }
+    
+    public void onDisconnect(BlockingSession sess) { }
+
+
 }

@@ -10,5 +10,6 @@ public class MySQLAdminDao extends MySQLGenericDao<AdminRecord> implements Admin
     public MySQLAdminDao(Mapping selectMapping, Connection conn) {
         super(selectMapping, selectMapping, conn, "username", AdminRecord.class);
     }
-	
+
+    
 }

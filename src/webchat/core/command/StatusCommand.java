@@ -21,7 +21,7 @@ import static webchat.core.Checks.checkArgs;
  */
 public class StatusCommand extends CommandMessage {
 
-    protected StatusCommand(UserStatus us) {
+    public StatusCommand(UserStatus us) {
         super("status", null, null, null, us.toString());
     }
 
@@ -32,22 +32,31 @@ public class StatusCommand extends CommandMessage {
     @Override
     public ResultMessage execute(ClientSession cs, ChatManager mgr) throws ChatException {
 
+        //away, busy... busy, away
         UserStatus usrStat = parseStatus(getArg(0));
         String srcName = cs.getUserName();
-        mgr.setUserStatus(srcName, usrStat);
+        String srcNameLower = srcName.toLowerCase();
+        try {
+            mgr.getLockManager().acquireLock(srcNameLower);
+            mgr.setUserStatus(srcName, usrStat);
 
-        for (RoomBean r : mgr.getRooms()) {
+            for (RoomBean r : mgr.getRooms()) {
 
-            if (!r.hasUser(srcName)) {
-                continue;
+                if (!r.hasUser(srcName)) {
+                    continue;
+                }
+                String roomNameLower = r.getName().toLowerCase();
+                try {
+                    //create room snapshot, receive status update, receive room snapshot
+                    mgr.getLockManager().acquireLock(roomNameLower);
+                    mgr.dispatchMessage(this, roomNameLower);
+                } finally {
+                    mgr.getLockManager().releaseLock(roomNameLower);
+                }
+
             }
-            String roomNameLower = r.getName().toLowerCase();
-            try {
-                mgr.getLockManager().acquireLock(roomNameLower);
-                mgr.dispatchMessage(this, roomNameLower);
-            } finally {
-                mgr.getLockManager().releaseLock(roomNameLower);
-            }
+        } finally {
+            mgr.getLockManager().releaseLock(srcNameLower);
         }
 
         return ResultMessage.success();

@@ -8,7 +8,7 @@ import webchat.client.agent.FunctionHandler;
 import webchat.client.agent.FunctionProcessor;
 import webchat.client.agent.MessageMatcher;
 import webchat.client.agent.MessagePattern;
-import webchat.client.blocking.BlockingChannel;
+import webchat.client.blocking.BlockingRoom;
 
 public class HelpFunctionHandler implements FunctionHandler {
 
@@ -40,7 +40,7 @@ public class HelpFunctionHandler implements FunctionHandler {
 	}
 	
 	@Override
-	public Object invoke(BlockingChannel bcc, String[] params) throws Exception {
+	public Object invoke(BlockingRoom bcc, String[] params) throws Exception {
 		StringBuffer sb = new StringBuffer();
 		for (FunctionHandler handler : handlers) {
 			String funcName = handler.getName();

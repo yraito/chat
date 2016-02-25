@@ -4,8 +4,9 @@
     Author     : Edward
 --%>
 
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@tag description="put the tag description here" pageEncoding="UTF-8"%>
-
+<%@taglib prefix="t" tagdir="/WEB-INF/tags" %>
 <%-- The list of normal or fragment attributes can be specified here: --%>
 <%@attribute name="recordType" required="true"%>
 <%@attribute name="numResults" required="true"%>
@@ -17,8 +18,10 @@
 <%@attribute name="table" fragment="true"%>
 
 <%-- any content can be specified here e.g.: --%>
-<html>
-    <head>
+
+<t:adminpage>
+    
+    <jsp:attribute name="pageHead">
         <title>Admin search</title>
         <link rel="stylesheet" href="../theme.css">
         <link rel="stylesheet" href="../table.css">
@@ -27,8 +30,6 @@
         <link rel="stylesheet" href="../jquery-ui.theme.min.css">
         <script src="../jquery-1.12.0.min.js"></script>
         <script src="../jquery-ui.min.js"></script>
-
-
         <style>
             #filterssidebardiv {
                 width:30%;
@@ -45,39 +46,38 @@
                 display: inline;
             }
 
-            #header h1 {
-                display:inline;
-            }
-            #header a {
-                float: right;
-                -webkit-appearance: button;
-                -moz-appearance: button;
-                appearance: button;
-
-                text-decoration: none;
-                color: initial;
-            }
-
-            nav li{
-                display:inline;
-            }
         </style>
-    </head>
-    <body>
-        <div id="header">
-            <h1>MyChat <small>Admin</small></h1>
-            <a href="processLogout" >Sign Out</a>
-        </div> 
-
-        <nav>
-            <ul>
-                <li><a href="messages">Messages</a></li>
-                <li><a href="events">Events</a></li>
-                <li><a href="users">Users</a></li>
-            </ul>
-
-        </nav>
+    </jsp:attribute>
+        
+    <jsp:attribute name="pageBody">
         <form method="POST" action="${recordType}">
+
+            <div id="controlsdiv">
+                <c:choose>
+                    <c:when test="${numResults != null && numResults != 0}">
+                        <p>Showing results ${rangeStart + 1} to ${rangeStart + rangeSize} of ${numResults}</p>
+                    </c:when>
+                    <c:otherwise>
+                        <p>No results found</p>
+                    </c:otherwise>
+                </c:choose>
+                
+                <span>
+                    <label>Results per page: </label>
+                    <select name="perpage">
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <label>Sort by: </label>
+                    <select name="sortby">
+                        <jsp:invoke fragment="sortOptions" />
+                    </select>
+                </span>
+
+
+            </div>
+
             <div id="filterssidebardiv">
                 <div id="filtersdiv">
                     <jsp:invoke fragment="filters" />
@@ -88,25 +88,8 @@
             </div>
 
             <div id="tablediv">
-                <h2>${recordType}</h2>
-
-                <div id="controlsdiv">
-                    <p>Showing results ${rangeStart} to ${rangeStart + rangeSize - 1} of ${numResults}</p>
-                    <span>
-                        <label>Results per page: </label>
-                        <select name="perpage">
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                        <label>Sort by: </label>
-                        <select name="sortby">
-                            <jsp:invoke fragment="sortOptions" />
-                        </select>
-                    </span>
 
 
-                </div>
                 <jsp:invoke fragment="table" />
                 <div id="tablenavdiv">
 
@@ -117,6 +100,6 @@
         <script>
             $('#filtersdiv').accordion();
         </script>
-    </body>
-
-</html>
+    </jsp:attribute>
+        
+</t:adminpage>

@@ -29,7 +29,7 @@ public class RevokeCommand extends CommandMessage {
         checkArgs(!isNullOrEmpty(getRoomName()), "missing room arg");
         String srcName = cs.getUserName();
         String granteeName = getTargetName();
-        String roomNameLower = getArg(1).toLowerCase();
+        String roomNameLower = getRoomName().toLowerCase();
         try {
             mgr.getLockManager().acquireLock(roomNameLower);
             checkState(roomExists(mgr, roomNameLower), "No such rooom");

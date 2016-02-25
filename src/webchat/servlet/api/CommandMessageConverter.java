@@ -4,15 +4,19 @@
  * and open the template in the editor.
  */
 package webchat.servlet.api;
+
 import com.thoughtworks.xstream.converters.ConversionException;
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
 import webchat.core.*;
+import webchat.core.command.JoinCommand;
+
 /**
  *
  * @author Edward
@@ -23,7 +27,7 @@ public class CommandMessageConverter implements Converter {
     public boolean canConvert(Class type) {
         return CommandMessage.class.isAssignableFrom(type);
     }
-    
+
     @Override
     public void marshal(Object o, HierarchicalStreamWriter writer, MarshallingContext mc) {
         CommandMessage cmd = (CommandMessage) o;
@@ -45,7 +49,7 @@ public class CommandMessageConverter implements Converter {
             writer.startNode("room");
             writer.setValue(cmd.getRoomName());
             writer.endNode();
-        } 
+        }
         if (cmd.getMessage() != null) {
             writer.startNode("message");
             writer.setValue(cmd.getMessage());
@@ -61,6 +65,12 @@ public class CommandMessageConverter implements Converter {
             }
             writer.endNode();
         }
+        Object attachment = cmd.getAttachment();
+        if (attachment != null) {
+            writer.startNode("attachment");
+            mc.convertAnother(attachment);
+            writer.endNode();
+        }
     }
 
     @Override
@@ -72,15 +82,15 @@ public class CommandMessageConverter implements Converter {
         String message = null;
         String timestamp = null;
         ArrayList<String> args = null;
-    
- 
-        while(reader.hasMoreChildren()) {
-            
+        Object attachment = null;
+
+        while (reader.hasMoreChildren()) {
+
             reader.moveDown();
             String nodeName = reader.getNodeName();
             String nodeValue = reader.getValue();
-            switch(nodeName) {
-                case "source": 
+            switch (nodeName) {
+                case "source":
                     source = nodeValue;
                     break;
                 case "target":
@@ -97,16 +107,19 @@ public class CommandMessageConverter implements Converter {
                     break;
                 case "args":
                     args = new ArrayList<>();
-                    while(reader.hasMoreChildren()) {
+                    while (reader.hasMoreChildren()) {
                         reader.moveDown();
                         args.add(reader.getValue());
                         reader.moveUp();
                     }
                     break;
+                case "attachment":
+                    attachment = nodeValue;
+                    break;
             }
             reader.moveUp();
         }
-        
+
         CommandMessage cm = CommandMessages.newCommandMessage(command, target, room, message);
         if (cm == null) {
             throw new ConversionException("Can't unmarshal CommandMessage");
@@ -119,6 +132,18 @@ public class CommandMessageConverter implements Converter {
         return cm;
     }
 
-    
-    
+    public static void main(String[] args) throws IOException{
+        Formatter f = new XStreamFormatter();
+        JoinCommand joinCmd = new JoinCommand("abc", "def");
+        RoomSnapshot.RoomUser userA = new RoomSnapshot.RoomUser("abd", RoomSnapshot.RoomPrivs.OWNER,
+                UserStatus.BUSY);
+        RoomSnapshot.RoomUser userB = new RoomSnapshot.RoomUser("asbd", RoomSnapshot.RoomPrivs.OWNER,
+                UserStatus.AWAY);
+        ArrayList<RoomSnapshot.RoomUser> users = new ArrayList<>();
+        users.add(userA);
+        users.add(userB);
+        RoomSnapshot rs = new RoomSnapshot("ssfs", "sfsdfs", users);
+        joinCmd.setAttachment(rs);
+        f.writeMessage(joinCmd, System.out);
+    }
 }

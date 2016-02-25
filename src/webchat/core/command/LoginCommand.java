@@ -68,6 +68,7 @@ public class LoginCommand extends CommandMessage {
                 if (currId != null && currId.equals(usrRecord.getId())) {
                     logger.debug("Already logged in as {}, sending OK", currName);
                     result = ResultMessage.success();
+                    super.persistable = false;
                     //Login successful
                 } 
                 //If already logged in under a different account, respond error

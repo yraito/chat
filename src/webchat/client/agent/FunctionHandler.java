@@ -1,6 +1,6 @@
 package webchat.client.agent;
 
-import webchat.client.blocking.BlockingChannel;
+import webchat.client.blocking.BlockingRoom;
 
 public interface FunctionHandler {
 
@@ -16,5 +16,5 @@ public interface FunctionHandler {
 	
 	//Class<?> getReturnType();
 	
-	Object invoke(BlockingChannel bcc, String[] params) throws Exception;
+	Object invoke(BlockingRoom bcc, String[] params) throws Exception;
 }

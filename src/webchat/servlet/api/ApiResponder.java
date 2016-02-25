@@ -14,6 +14,7 @@ import webchat.core.ResultMessage;
 /*
  respond 200 and flag errors in body? error codes?
 */
+
 public class ApiResponder {
 
     private static Formatter formatter = new XStreamFormatter();
@@ -54,8 +55,15 @@ public class ApiResponder {
         os.close();
     }
     
+    public void respondException(Exception e) {
+        
+    }
     public ObjectOutputStream respondOK() throws IOException{
         resp.setStatus(HttpServletResponse.SC_OK);
         return formatter.createWriter(new BufferedOutputStream(resp.getOutputStream()));
+    }
+    
+    public static void main(String[] args) {
+        System.out.println(1-1);
     }
 }

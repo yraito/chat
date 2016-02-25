@@ -20,11 +20,11 @@ public class RoomSnapshot {
     
     public static class RoomUser {
         
-        String name;
-        RoomPrivs privs;
-        UserStatus state;
+        public String name;
+        public RoomPrivs privs;
+        public UserStatus state;
         
-        RoomUser(String name, RoomPrivs privs, UserStatus state) {
+        public RoomUser(String name, RoomPrivs privs, UserStatus state) {
             this.name = name;
             this.privs = privs;
             this.state = state;
@@ -34,6 +34,7 @@ public class RoomSnapshot {
     public String name;
     public String password;
     public List<RoomUser> users = new ArrayList<>();
+    public long timestamp = System.currentTimeMillis();
     
     public RoomSnapshot(ChatManager mgr, RoomBean room) {
         this.name = room.getName();
@@ -50,5 +51,11 @@ public class RoomSnapshot {
             }
             this.users.add((new RoomUser(user, privs, state)));
         }
+    }
+    
+    public RoomSnapshot(String name, String password, List<RoomUser> users) {
+        this.name = name;
+        this.password = password;
+        this.users.addAll(users);
     }
 }

@@ -23,7 +23,7 @@ import webchat.servlet.api.HttpServletClientSession;
 @WebServlet(
         name = "UserLoginLogoutServlet",
         description = "Handle user web login/logout",
-        urlPatterns = {"/login", "/processLogin", "/processLogout"}
+        urlPatterns = {"/processLogin", "/processLogout"}
 )
 public class UserLoginLogoutServlet extends HttpServlet {
 
@@ -39,24 +39,11 @@ public class UserLoginLogoutServlet extends HttpServlet {
         String path = req.getServletPath().toLowerCase();
 
         logger.debug("LoginLogout servlet: received POST request at {}", path);
-        if (path.startsWith("/login")) {
-            req.getServletContext().getRequestDispatcher("/WEB-INF/login.jsp").forward(req, resp);
-        } else if (path.startsWith("/processlogin")) {
+        if (path.startsWith("/processlogin")) {
             loginWeb(req, resp);
         } else if (path.startsWith("/processlogout")) {
             logoutWeb(req, resp);
         } 
-    }
-
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
-        String path = req.getServletPath().toLowerCase();
-
-        logger.debug("LoginLogout servlet: received GET request at {}", path);
-        if (path.startsWith("/login")) {
-            req.getServletContext().getRequestDispatcher("/WEB-INF/login.jsp").forward(req, resp);
-        }
     }
 
     /**
@@ -98,11 +85,11 @@ public class UserLoginLogoutServlet extends HttpServlet {
      */
     private void logoutWeb(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (req.isRequestedSessionIdValid()) {
+            logger.debug("logout: Invalidating session");
             req.getSession(false).invalidate();
         }
         //req.getServletContext().getRequestDispatcher("login.jsp").forward(req, resp);
         resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
         resp.getWriter().close();
     }
-
 }

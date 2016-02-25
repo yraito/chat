@@ -31,7 +31,11 @@ public class AdminLoginLogoutServlet extends HttpServlet {
      */
     private static final long serialVersionUID = 1L;
 
-    private static final String ADMIN_AUTH = "admin_auth";
+    public static final String ADMIN_AUTH = "admin_auth";
+    
+    public static AdminRecord getAdminRecord(HttpSession sess) {
+        return (AdminRecord) sess.getAttribute(ADMIN_AUTH);
+    }
 
     Authenticator authenticator;
 

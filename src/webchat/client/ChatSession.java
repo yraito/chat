@@ -1,19 +1,19 @@
 package webchat.client;
 
-import java.util.concurrent.Future;
 
-import webchat.core.CommandMessage;
-import webchat.core.ResultMessage;
+
+import java.io.Closeable;
+import webchat.core.*;
+
 
 /**
  * Represents a client's connection to the server. 
  * @author Nick
  *
  */
-public interface ChatSession {
+public interface ChatSession extends Closeable{
 
-	Future<ResultMessage> writeFuture(CommandMessage msg, ResultCallback rc);
+	ChatFuture<ResultMessage> writeFuture(CommandMessage msg);
 	
 	void close();
-	
 }

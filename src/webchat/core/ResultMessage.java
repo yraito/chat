@@ -15,21 +15,13 @@ public class ResultMessage implements Message{
 	public static ResultMessage success() {
 		return new ResultMessage(ResultType.SUCCESS, null, null);
 	}
-	
-        public static ResultMessage noop(Object o) {
-            return new ResultMessage(ResultType.NOOP, null, o);
-        }
-        
-        public static ResultMessage noop() {
-            return new ResultMessage(ResultType.NOOP, null, null);
-        }
         
 	public static ResultMessage error(String err) {
 		return new ResultMessage(ResultType.FAILURE, err, null);
 	}
 	
 	public enum ResultType {
-		SUCCESS, FAILURE, NOOP
+		SUCCESS, FAILURE
 	}
 	
 	private ResultType type;

@@ -21,7 +21,7 @@ public class DestroyCommand extends CommandMessage {
     }
 
     public DestroyCommand(String roomName) {
-        super("destroy", null, roomName, null);
+        super("destroy", null, roomName, "Hulk smash");
     }
 
     public DestroyCommand() {

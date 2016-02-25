@@ -31,6 +31,7 @@ public class LogoutCommand extends CommandMessage {
         if (cs.getUserName() == null) {
             logger.debug("User already logged out");
             result = ResultMessage.success();
+            super.persistable = false;
         } else {
             logger.debug("Logging out {}", cs.getUserName());
             result = ResultMessage.success();

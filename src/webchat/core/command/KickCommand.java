@@ -33,18 +33,16 @@ public class KickCommand extends CommandMessage {
         String srcName = cs.getUserName();
         String tgtName = getTargetName();
         String roomNameLower = getRoomName().toLowerCase();
-        String reason = getMessage();
         try {
             mgr.getLockManager().acquireLock(roomNameLower);
             checkState(roomExists(mgr, roomNameLower), "No such room");
             checkState(userIsInRoom(mgr, srcName, roomNameLower), "Src not in room");
             checkState(userIsInRoom(mgr, tgtName, roomNameLower), "Tgt not in room");
             checkState(userHasPower(mgr, srcName, roomNameLower), "Don't have owner privs");
-            checkState(!srcName.equalsIgnoreCase(mgr.getRoom(roomNameLower).getOwner()), "Can't self-kick");
-            mgr.getRoom(roomNameLower).removeUser(tgtName);
-
-            setMessage(safeMessage(reason));
+            checkState(!srcName.equalsIgnoreCase(tgtName), "Can't self-kick");
+            
             mgr.dispatchMessage(this, roomNameLower);
+            mgr.getRoom(roomNameLower).removeUser(tgtName);
             return ResultMessage.success();
         } finally {
             mgr.getLockManager().releaseLock(roomNameLower);

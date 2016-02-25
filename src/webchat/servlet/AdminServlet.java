@@ -2,11 +2,8 @@ package webchat.servlet;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -22,12 +19,11 @@ import webchat.dao.Where;
 import webchat.dao.dto.EventRecord;
 import webchat.dao.dto.UserRecord;
 import webchat.dao.sql.MySQLDaoConnectionFactory;
-import webchat.util.DaoUtils;
-
-import static webchat.util.StringUtils.*;
+import webchat.util.FromParamsSearcher;
+import static webchat.util.Parser.*;
 
 @WebServlet(
-urlPatterns={"/admin/messages", "/admin/events", "/admin/users"}
+        urlPatterns = {"/admin/messages", "/admin/events", "/admin/users", "/admin"}
 )
 public class AdminServlet extends HttpServlet {
 
@@ -35,81 +31,6 @@ public class AdminServlet extends HttpServlet {
      *
      */
     private static final long serialVersionUID = 1L;
-
-    private static Field parseField(Class<?> clazz, String fieldName, String defaultFieldName) {
-        Field[] fields = clazz.getDeclaredFields();
-        for (Field field : fields) {
-            if (field.getName().equals(fieldName)) {
-                return field;
-            }
-        }
-        for (Field field : fields) {
-            if (field.getName().equals(defaultFieldName)) {
-                return field;
-            }
-        }
-        throw new RuntimeException("Default field name \"" + defaultFieldName + "\" is not valid");
-    }
-
-    private static int parseInt(String intStr, int min, int max, int defaultValue) {
-        if (intStr == null) {
-            return defaultValue;
-        }
-        try {
-            int value = Integer.valueOf(intStr);
-            value = Math.max(min, value);
-            value = Math.min(max, value);
-            return value;
-        } catch (NumberFormatException e) {
-            return defaultValue;
-        }
-    }
-
-    private static Long parseDate(String dateStr, long defaultValue) {
-        if (dateStr == null) {
-            return defaultValue;
-        }
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        try {
-            return sdf.parse(dateStr).getTime();
-        } catch (ParseException e) {
-            return defaultValue;
-        }
-    }
-
-    private static <T> Where<T> whereContainsAnyOrAll(Searcher<T> s, Class<T> c, String f, String a, String... ks) {
-
-        try {
-            Field fld = c.getDeclaredField(f);
-            Function<String, Where<T>> func = t -> {
-                return s.whereLike(fld, '%' + t + '%');
-            };
-            if (a == null || a.equals("all")) {
-                return DaoUtils.whereAll(s, func, ks);
-            } else {
-                return DaoUtils.whereAny(s, func, ks);
-            }
-        } catch (NoSuchFieldException | SecurityException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static <T> Where<T> whereMatchesAny(Searcher<T> s, Class<T> c, String f, String... ks) {
-        try {
-            Field fld = c.getDeclaredField(f);
-            Function<String, Where<T>> func = t -> {
-                if (t.contains("*")) {
-                    t = t.replace('*', '%');
-                    return s.whereLike(fld, t);
-                } else {
-                    return s.whereLwrEq(fld, t);
-                }
-            };
-            return DaoUtils.whereAny(s, func, ks);
-        } catch (NoSuchFieldException | SecurityException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     private DaoConnectionFactory daoFactory = MySQLDaoConnectionFactory.getInstance();
 
@@ -125,8 +46,9 @@ public class AdminServlet extends HttpServlet {
 
     protected void processRequest(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String relativePath = req.getServletPath().toLowerCase();
-        if (relativePath.equals("/")) {
-            req.getRequestDispatcher("main.jsp").forward(req, resp);
+        if (relativePath.equals("/admin")) {
+            req.getRequestDispatcher("/WEB-INF/adminmain.jsp").forward(req, resp);
+            return;
         }
         List<?> queryResults = null;
         String viewPath = null;
@@ -138,137 +60,107 @@ public class AdminServlet extends HttpServlet {
             viewPath = "/WEB-INF/eventsearch.jsp";
         } else if (relativePath.startsWith("/admin/users")) {
             queryResults = searchUsers(req, resp);
-            viewPath = "/WEB-INF/users.jsp";
+            viewPath = "/WEB-INF/usersearch.jsp";
         }
-        if (viewPath != null) {
-            req.setAttribute("records", queryResults);            
-            req.getRequestDispatcher(viewPath).forward(req, resp);
-        } else {
-            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-        }
+        req.setAttribute("records", queryResults);
+        req.getRequestDispatcher(viewPath).forward(req, resp);
+
     }
 
     private List<EventRecord> searchMessages(HttpServletRequest req, HttpServletResponse resp) throws DaoException {
-        String[] keywords = splitQuoted(req.getParameter("keywords[]"));
-        String keywordQualifier = req.getParameter("keywordqualifier");
+        String[] keywords = parseArray(req.getParameter("keywords[]"));
+        boolean keywordsAll = parseBoolean(req.getParameter("keywordsall"), false);
         String[] emoticons = req.getParameterValues("emoticons[]");
-        String emoticonQualifier = req.getParameter("emoticonqualifier");
-        String[] roomNames = splitQuoted(req.getParameter("roomnames[]"));
-        String[] sourceNames = splitQuoted(req.getParameter("sourcenames[]"));
-        String[] targetNames = splitQuoted(req.getParameter("targetnames[]"));
+        boolean emoticonsAll = parseBoolean(req.getParameter("emoticonsall"), false);
+        String[] roomNames = parseArray(req.getParameter("roomnames[]"));
+        String[] sourceNames = parseArray(req.getParameter("sourcenames[]"));
+        String[] targetNames = parseArray(req.getParameter("targetnames[]"));
         String[] messageTypes = req.getParameterValues("types[]");
         if (messageTypes == null || messageTypes.length == 0) {
             messageTypes = new String[]{"message", "whisper"};
         }
-        Long startDate = parseDate(req.getParameter("startdate"), 1L);
-        Long endDate = parseDate(req.getParameter("enddate"), System.currentTimeMillis());
-        Field sortBy = parseField(EventRecord.class, req.getParameter("sortby"), "timestamp");
-        int startIndex = parseInt(req.getParameter("startindex"), 0, Integer.MAX_VALUE, 0);
-        int perPage = parseInt(req.getParameter("perpage"), 1, 500,  25);
-        int maxRecords = 1000;
-        Class<EventRecord> clazz = EventRecord.class;
+        Long startDate = parseDateTime(req.getParameter("startdate"));
+        Long endDate = parseDateTime(req.getParameter("enddate"));
 
         try (DaoConnection daoConn = daoFactory.openDaoConnection()) {
             Searcher<EventRecord> searcher = daoConn.getEventDao().searcher();
-            Where<EventRecord> msgWhere = whereContainsAnyOrAll(searcher, clazz, "message", keywordQualifier, keywords);
-            Where<EventRecord> emoWhere = whereContainsAnyOrAll(searcher, clazz, "message", emoticonQualifier, emoticons);
-            Where<EventRecord> roomWhere = whereMatchesAny(searcher, clazz, "roomName", roomNames);
-            Where<EventRecord> srcWhere = whereMatchesAny(searcher, clazz, "sourceName", sourceNames);
-            Where<EventRecord> tgtWhere = whereMatchesAny(searcher, clazz, "targetName", targetNames);
-            Where<EventRecord> typeWhere = whereMatchesAny(searcher, clazz, "type", messageTypes);
-            Where<EventRecord> dateWhere = searcher.whereBtw(parseField(clazz, "timestamp", null), startDate, endDate);
-            Where<EventRecord> fullWhere
-                    = msgWhere
-                    .and(emoWhere)
-                    .and(roomWhere)
-                    .and(srcWhere)
-                    .and(tgtWhere)
-                    .and(typeWhere)
-                    .and(dateWhere);
-            List<EventRecord> eventRecords = fullWhere.doQuery(sortBy, startIndex, maxRecords);
-            if (startIndex >= eventRecords.size()) {
-                return Collections.emptyList();
-            }
-            int endIndex = Math.min(startIndex + perPage, eventRecords.size());
-            req.setAttribute("startIndex", startIndex);
-            req.setAttribute("numResults", eventRecords.size());
-            return eventRecords.subList(startIndex, endIndex);
+            FromParamsSearcher<EventRecord> fps = new FromParamsSearcher(searcher, EventRecord.class);
+            Where<EventRecord> msgWhere = fps.whereContains("message", keywordsAll, keywords);
+            Where<EventRecord> emoWhere = fps.whereContains("message", emoticonsAll, emoticons);
+            Where<EventRecord> roomWhere = fps.whereLwrEqAny("roomName", roomNames);
+            Where<EventRecord> srcWhere = fps.whereLwrEqAny("sourceName", sourceNames);
+            Where<EventRecord> tgtWhere = fps.whereLwrEqAny("targetName", targetNames);
+            Where<EventRecord> typeWhere = fps.whereLwrEqAny("type", messageTypes);
+            Where<EventRecord> dateWhere = fps.whereBtw("timestamp", startDate, endDate);
+            Where<EventRecord> fullWhere = msgWhere.and(emoWhere).and(roomWhere).and(srcWhere).and(tgtWhere)
+                    .and(typeWhere).and(dateWhere);
+            return doQuery(fullWhere, EventRecord.class, "timestamp", req, resp);
         }
     }
 
     private List<EventRecord> searchEvents(HttpServletRequest req, HttpServletResponse resp) throws DaoException {
-        String[] roomNames = splitQuoted(req.getParameter("roomnames[]"));
-        String[] sourceNames = splitQuoted(req.getParameter("sourcenames[]"));
-        String[] targetNames = splitQuoted(req.getParameter("targetnames[]"));
-        String[] messageTypes = req.getParameterValues("types[]");
-        Long startDate = parseDate(req.getParameter("startdate"), 1L);
-        Long endDate = parseDate(req.getParameter("enddate"), System.currentTimeMillis());
-        Field sortBy = parseField(EventRecord.class, req.getParameter("sortby"), "timestamp");
-        int startIndex = parseInt(req.getParameter("start"), 0, Integer.MAX_VALUE, 0);
-        int perPage = parseInt(req.getParameter("perpage"), 1, 500,  25);
-        int maxRecords = 1000;
-        Class<EventRecord> clazz = EventRecord.class;
+        String[] roomNames = parseArray(req.getParameter("roomnames[]"));
+        String[] sourceNames = parseArray(req.getParameter("sourcenames[]"));
+        String[] targetNames = parseArray(req.getParameter("targetnames[]"));
+        String[] eventTypes = req.getParameterValues("types[]");
+        Long startDate = parseDateTime(req.getParameter("startdate"));
+        Long endDate = parseDateTime(req.getParameter("enddate"));
 
         try (DaoConnection daoConn = daoFactory.openDaoConnection()) {
             Searcher<EventRecord> searcher = daoConn.getEventDao().searcher();
-            Where<EventRecord> roomWhere = whereMatchesAny(searcher, clazz, "roomName", roomNames);
-            Where<EventRecord> srcWhere = whereMatchesAny(searcher, clazz, "sourceName", sourceNames);
-            Where<EventRecord> tgtWhere = whereMatchesAny(searcher, clazz, "targetName", targetNames);
-            Where<EventRecord> typeWhere = whereMatchesAny(searcher, clazz, "type", messageTypes);
-            Where<EventRecord> dateWhere = searcher.whereBtw(parseField(clazz, "timestamp", null), startDate, endDate);
-            Field typeFld = parseField(EventRecord.class, "type", null);
-            Where<EventRecord> noMsgWhere = searcher.whereNeq(typeFld, "message").and(searcher.whereNeq(typeFld, "whisper"));
-            Where<EventRecord> fullWhere
-                    = roomWhere
-                    .and(srcWhere)
-                    .and(tgtWhere)
-                    .and(typeWhere)
-                    .and(dateWhere)
-                    .and(noMsgWhere);
-                        List<EventRecord> eventRecords = fullWhere.doQuery(sortBy, startIndex, maxRecords);
-            if (startIndex >= eventRecords.size()) {
-                return Collections.emptyList();
-            }
-            int endIndex = Math.min(startIndex + perPage, eventRecords.size());
-            req.setAttribute("startIndex", startIndex);
-            req.setAttribute("numResults", eventRecords.size());
-            return eventRecords.subList(startIndex, endIndex);
+            FromParamsSearcher<EventRecord> fps = new FromParamsSearcher(searcher, EventRecord.class);
+            Where<EventRecord> roomWhere = fps.whereLwrEqAny("roomName", roomNames);
+            Where<EventRecord> srcWhere = fps.whereLwrEqAny("sourceName", sourceNames);
+            Where<EventRecord> tgtWhere = fps.whereLwrEqAny("targetName", targetNames);
+            Where<EventRecord> typeWhere = fps.whereLwrEqAny("type", eventTypes);
+            Where<EventRecord> dateWhere = fps.whereBtw("timestamp", startDate, endDate);
+            Where<EventRecord> fullWhere = roomWhere.and(srcWhere).and(tgtWhere).and(typeWhere).and(dateWhere);
+            fullWhere = fullWhere.and(fps.whereNeqAll("type", "message", "whisper"));
+            return doQuery(fullWhere, EventRecord.class, "timestamp", req, resp);
         }
     }
 
     private List<UserRecord> searchUsers(HttpServletRequest req, HttpServletResponse resp) throws DaoException {
-        String[] usernames = splitQuoted(req.getParameter("targetnames"));
-        String[] ownerNames = splitQuoted(req.getParameter("targetnames"));
-        String[] acctTypes = req.getParameterValues("types");
-        Long startDate = parseDate(req.getParameter("startdate"), 1L);
-        Long endDate = parseDate(req.getParameter("enddate"), System.currentTimeMillis());
-        Field sortBy = parseField(EventRecord.class, req.getParameter("sortby"), "timestamp");
-        int startIndex = parseInt(req.getParameter("start"), 0, Integer.MAX_VALUE, 0);
-        int perPage = parseInt(req.getParameter("perpage"), 1, 500,  25);
-        int maxRecords = 1000;
-        Class<UserRecord> clazz = UserRecord.class;
+        String[] usernames = parseArray(req.getParameter("usernames[]"));
+        String[] ownerNames = parseArray(req.getParameter("ownernames[]"));
+        String[] acctTypes = req.getParameterValues("types[]");
+        String[] acctStatuses = req.getParameterValues("statuses[]");
+        Long startCreateDate = parseDateTime(req.getParameter("startdate"));
+        Long endCreateDate = parseDateTime(req.getParameter("enddate"));
 
         try (DaoConnection daoConn = daoFactory.openDaoConnection()) {
             Searcher<UserRecord> searcher = daoConn.getUserDao().searcher();
-            Where<UserRecord> userWhere = whereMatchesAny(searcher, clazz, "username", usernames);
-            Where<UserRecord> ownerWhere = whereMatchesAny(searcher, clazz, "ownerName", ownerNames);
-            //Where<UserRecord> typeWhere = whereMatchesAny(searcher, clazz, "type", acctTypes);
-            Where<UserRecord> dateWhere = searcher.whereBtw(parseField(clazz, "timestamp", null), startDate, endDate);
-            Where<UserRecord> fullWhere
-                    = userWhere
-                    .and(ownerWhere)
-                    .and(typeWhere)
-                    .and(dateWhere);
-            List<UserRecord> eventRecords = fullWhere.doQuery(sortBy, startIndex, maxRecords);
-            if (startIndex >= eventRecords.size()) {
-                return Collections.emptyList();
+            FromParamsSearcher<UserRecord> fps = new FromParamsSearcher(searcher, UserRecord.class);
+            Where<UserRecord> userWhere = fps.whereLwrEqAny("username", usernames);
+            Where<UserRecord> ownerWhere = fps.whereLwrEqAny("ownerName", ownerNames);
+            Where<UserRecord> dateWhere = fps.whereBtw("created", startCreateDate, endCreateDate);
+            Where<UserRecord> fullWhere = userWhere.and(ownerWhere).and(dateWhere);
+            if (acctTypes != null && acctTypes.length == 1) {
+                Where<UserRecord> typeWhere = acctTypes[0].equals("agent") ? fps.whereNotNull("ownerId") : fps.whereNull("ownerId");
+                fullWhere = fullWhere.and(typeWhere);
             }
-            int endIndex = Math.min(startIndex + perPage, eventRecords.size());
-            req.setAttribute("startIndex", startIndex);
-            req.setAttribute("numResults", eventRecords.size());
-            return eventRecords.subList(startIndex, endIndex);
+            
+            if (acctStatuses != null && acctStatuses.length == 1) {
+                Where<UserRecord> statusWhere = acctStatuses[0].equals("inactive") ? fps.whereNotNull("destroyed") : fps.whereNull("destroyed");
+                fullWhere = fullWhere.and(statusWhere);
+            }
+            return doQuery(fullWhere, UserRecord.class, "username", req, resp);
         }
     }
 
+    private <T> List<T> doQuery(Where<T> fullWhere, Class<T> clazz, String defaultSortField, HttpServletRequest req, HttpServletResponse resp) throws DaoException {
+        Field sortBy = parseField(clazz, req.getParameter("sortby"), defaultSortField);
+        int startIndex = parseInt(req.getParameter("start"), 0, Integer.MAX_VALUE, 0);
+        int perPage = parseInt(req.getParameter("perpage"), 1, 500, 25);
+        int maxRecords = 1000;
+        List<T> records = fullWhere.doQuery(sortBy, startIndex, maxRecords);
+        if (startIndex >= records.size()) {
+            return Collections.emptyList();
+        }
+        int endIndex = Math.min(startIndex + perPage, records.size());
+        req.setAttribute("startIndex", startIndex);
+        req.setAttribute("numResults", records.size());
+        return records.subList(startIndex, endIndex);
+    }
     //TODO optimize and, finish doquery, update MySQLUserDao
 }

@@ -216,7 +216,7 @@ public class ChatManager {
      * @param msg
      * @param room
      */
-    public void dispatchMessage(CommandMessage msg, String room) {
+    public void dispatchMessage(CommandMessage msg, String room, ClientSession ignoreCs) {
         logger.debug("Dispatching to room {} message {}", room, msg);
         RoomBean rmBean = getRoom(room);
         logger.debug("Found room {}", rmBean);
@@ -224,6 +224,14 @@ public class ChatManager {
         logger.debug("Sending message to users in room: {}", users);
         for (String user : users) {
             ClientSession cs = onlineUsers.get(user.toLowerCase());
+            if (ignoreCs != null && user.equalsIgnoreCase(ignoreCs.getUserName())) {
+                logger.debug("Skipping dispatch to {}", user);
+                continue;
+            }
+            if (cs == null) {
+                logger.warn("null ClientSession for user {}, dispatching {}",  user, msg);
+                continue;
+            }
             try {
                 logger.debug("Writing to ClientSession {}", cs);
                 cs.writeMessage(msg);
@@ -248,4 +256,7 @@ public class ChatManager {
         }
     }
 
+    public void dispatchMessage(CommandMessage msg, String room) {
+        dispatchMessage(msg, room, null);
+    }
 }

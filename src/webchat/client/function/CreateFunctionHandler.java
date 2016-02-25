@@ -9,7 +9,7 @@ import java.util.List;
 import webchat.client.agent.FunctionHandler;
 import webchat.client.agent.MessageMatcher;
 import webchat.client.agent.MessagePattern;
-import webchat.client.blocking.BlockingChannel;
+import webchat.client.blocking.BlockingRoom;
 
 public class CreateFunctionHandler implements FunctionHandler {
 
@@ -43,12 +43,12 @@ public class CreateFunctionHandler implements FunctionHandler {
 	}
 	
 	@Override
-	public Object invoke(BlockingChannel bcc, String[] params) throws Exception {
+	public Object invoke(BlockingRoom bcc, String[] params) throws Exception {
 		bcc.sendMessage("Attempting to create room " + params[0]);
 		if (params.length == 1) {
-			bcc.getSession().createChannel(params[0]);
+			bcc.getSession().createRoom(params[0]);
 		} else {
-			bcc.getSession().createChannel(params[0], params[1]);
+			bcc.getSession().createRoom(params[0], params[1]);
 		}
 		return "Room created";
 	}

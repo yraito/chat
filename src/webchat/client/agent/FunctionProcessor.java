@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import webchat.client.blocking.BlockingChannel;
+import webchat.client.blocking.BlockingRoom;
 import webchat.client.function.CreateFunctionHandler;
 import webchat.client.function.HelpFunctionHandler;
 import webchat.client.function.JoinFunctionHandler;
@@ -22,12 +22,11 @@ public class FunctionProcessor {
 	}
 	
 	public FunctionProcessor() {
-		addHandler(new JoinFunctionHandler());
-		addHandler(new CreateFunctionHandler());
-		addHandler(new HelpFunctionHandler(this)); //Escaped this
+
 		
 	}
 	
+        
 	public void addHandler(FunctionHandler fh) {
 		handlers.put(fh.getName().toLowerCase(), fh);
 	}
@@ -42,7 +41,7 @@ public class FunctionProcessor {
 		return Collections.unmodifiableCollection(handlers.values());
 	}
 	
-	public void process(BlockingChannel chan, String src, String msg, boolean whisper) {
+	public void process(BlockingRoom chan, String src, String msg, boolean whisper) {
 		
 		for (FunctionHandler fh : handlers.values()) {
 			List<String> args = fh.getMatcher().match(msg);
@@ -58,10 +57,10 @@ public class FunctionProcessor {
 				return;
 			}
 		}
-		respond(chan, src, "Huh?", whisper);
+		//respond(chan, src, "Huh?", whisper);
 	}
 	
-	private void respond(BlockingChannel chan, String src, Object response,  boolean whisper) {
+	private void respond(BlockingRoom chan, String src, Object response,  boolean whisper) {
 		if (response == null) {
 			return;
 		}

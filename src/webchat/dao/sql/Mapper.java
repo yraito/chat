@@ -17,9 +17,17 @@ import java.util.logging.Logger;
 import webchat.dao.dto.Column;
 import webchat.dao.dto.Reference;
 import webchat.dao.dto.Table;
-
+import static webchat.util.StringUtils.*;
 /**
- * Generates mappings from annotated classes to tables
+ * Generates Mappings from annotated classes to database tables. <br>
+ *
+ * More precisely, a @Table annotated class is mapped to a 'FROM' clause, and
+ * the fields of the class mapped to the columns. We define two mappings for
+ * each class. The 'insert' mapping is used for inserts and updates, and maps a
+ * class to its corresponding table, omitting @Reference annotated fields. The
+ * 'select' mapping is used for retrievals, and includes @Reference fields by
+ * left joining the corresponding table on its foreign keys. This allows us to
+ * 'expand' the details for the foreign keys.
  *
  * @author Nick
  */
@@ -64,6 +72,8 @@ public class Mapper {
             checkAnnoPresent(foreignKeyField, Column.class);
             String fieldAlias = refAnnoField.getAnnotation(Column.class).name();
             String fieldRealOwnerClass = foreignKeyField.getAnnotation(Column.class).isForeignKeyOf();
+            checkMapping(!isNullOrEmpty(fieldRealOwnerClass), "Missing isForeignKeyOf attribute on @Column " 
+                    + clazz.getName() + ":: " + foreignKeyField.getName());
             Class fieldRealOwnerClassClass = Class.forName(fieldRealOwnerClass);
             String foreignKeyName = foreignKeyField.getAnnotation(Column.class).name();
             String fieldRealOwnerAlias = getTableAlias(fieldRealOwnerClass, foreignKeyName);
@@ -148,9 +158,13 @@ public class Mapper {
     }
 
     public void checkAnnoPresent(AnnotatedElement ae, Class annoClass) {
-        if (!ae.isAnnotationPresent(annoClass)) {
-            throw new MappingException("Missing anno " + annoClass + " on " + ae);
-        }
+        boolean b = ae.isAnnotationPresent(annoClass);
+        checkMapping(b, "Missing anno " + annoClass + " on " + ae);
     }
 
+    public void checkMapping(boolean b, String err) {
+        if (!b) {
+            throw new MappingException(err);
+        }
+    }
 }

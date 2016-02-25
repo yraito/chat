@@ -19,6 +19,7 @@ public class ListRoomsCommand extends CommandMessage {
 
     public ListRoomsCommand() {
         super("listrooms", null, null, null);
+        super.persistable = false;
     }
 
     @Override

@@ -14,9 +14,13 @@ import webchat.dao.DaoException;
 import webchat.dao.Where;
 import webchat.dao.sql.Mapping;
 
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+
 public class MySQLWhere<T> implements Where<T> {
 
-  
+    private final static Logger logger = LoggerFactory.getLogger(MySQLWhere.class);
+
     TokenList tokenList;
     QueryParts queryParts;
     Connection conn;
@@ -74,9 +78,11 @@ public class MySQLWhere<T> implements Where<T> {
             return sqlthat;
         }
         LinkedList<Token> l = new LinkedList<>();
+        l.add(new StringToken("("));
         l.add(new PredicateToken(this));
-        l.add(new StringToken("AND"));
+        l.add(new StringToken(") AND ("));
         l.add(new PredicateToken(sqlthat));
+        l.add(new StringToken(")"));
         return new MySQLWhere<>(mapping, conn, clazz, queryParts, l);
     }
 
@@ -133,6 +139,7 @@ public class MySQLWhere<T> implements Where<T> {
 
     private List<T> runQuery(String prepQuery, List<Object> queryArgs) throws DaoException {
 
+        logger.debug("runQuery: {} ; {}", prepQuery, queryArgs);
         try (PreparedStatement pstmt = conn.prepareStatement(prepQuery)) {
 
             for (int j = 0; j < queryArgs.size(); j++) {
@@ -151,6 +158,7 @@ public class MySQLWhere<T> implements Where<T> {
                     }
                     rsltList.add(t);
                 }
+                logger.debug("{} results", rsltList.size());
                 return rsltList;
             }
 

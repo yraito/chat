@@ -73,5 +73,4 @@ public class MySQLDaoConnection implements DaoConnection {
             e.printStackTrace();
         }
     }
-
 }

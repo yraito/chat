@@ -33,7 +33,7 @@ public class XStreamFormatter implements Formatter {
         xstream.registerConverter(new RoomBeanConverter());
 
     }
-    
+
     private void initResultMessage() {
         xstream.alias("result", ResultMessage.class);
         xstream.useAttributeFor(ResultMessage.class, "type");
@@ -44,27 +44,39 @@ public class XStreamFormatter implements Formatter {
 
     private void initCommandMessage() {
         xstream.alias("command", CommandMessage.class);
-        for (Map.Entry<String, Class<? extends CommandMessage>> entry : 
-                CommandMessages.getAllCommands().entrySet()) {
+        for (Map.Entry<String, Class<? extends CommandMessage>> entry
+                : CommandMessages.getAllCommands().entrySet()) {
             xstream.alias("command", entry.getValue());
         }
         xstream.registerConverter(new CommandMessageConverter());
     }
-    public void writeMessage(Message m, OutputStream os) throws IOException {
-        xstream.toXML(m, os);
-    }
 
-    public Message readMessage(InputStream is) throws IOException {
-        Object o = xstream.fromXML(is);
-        if (!(o instanceof Message)) {
-            throw new IOException("Expecting a Message, got a " + o.getClass());
+    @Override
+    public void writeMessage(Message m, OutputStream os) throws IOException {
+        //xstream.toXML(m, os);
+        try (ObjectOutputStream oos = createWriter(os)) {
+            oos.writeObject(m);
         }
-        return (Message) o;
     }
 
     @Override
-    public ObjectOutputStream createWriter(OutputStream os) throws IOException{
-        return xstream.createObjectOutputStream(os);
+    public Message readMessage(InputStream is) throws IOException {
+        //Object o = xstream.fromXML(is);
+        try (ObjectInputStream ois = createReader(is)) {
+            Object o = ois.readObject();
+            if (!(o instanceof Message)) {
+                throw new IOException("Expecting a Message, got a " + o.getClass());
+            }
+            return (Message) o;
+        } catch(ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    @Override
+    public ObjectOutputStream createWriter(OutputStream os) throws IOException {
+        return xstream.createObjectOutputStream(os, "messages");
     }
 
     @Override
@@ -77,7 +89,6 @@ public class XStreamFormatter implements Formatter {
         Message m1 = new KickCommand("someuser", "someroom", "because");
         Formatter f = new XStreamFormatter();
 
-        
     }
 
 }

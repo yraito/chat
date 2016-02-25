@@ -41,7 +41,7 @@ public class StringUtils {
 	 */
 	public static String[] splitQuoted(String msg) {
                 if (msg == null) {
-                    return new String[0];
+                    throw new IllegalArgumentException("Null string");
                 }
 		Matcher m = p.matcher(msg);
 		ArrayList<String> lst = new ArrayList<>();

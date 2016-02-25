@@ -1,242 +1,267 @@
 
-	
-	var postMimeType = 'application/x-www-form-urlencoded';
 
-	function Command(command) {
+var postMimeType = 'application/x-www-form-urlencoded';
 
-		this.command = command;
-		this.target = null;
-		this.room = null;
-		this.message = null;
-		this.args = null;
-		this.source = null;
-		
-		this.to = function(target) {
-			this.target = target;
-			return this;
-		};
+if (!window.console) {
+    window.console = {
+        log: function() {
+            return;
+        }
+    };
+}
 
-                this.from = function(source) {
-                    this.source = source;
-                    return this;
-                };
-                
-		this.in = function(room) {
-			this.room = room;
-			return this;
-		};
+function Command(command) {
 
-		this.saying = function(message) {
-			this.message = message;
-			return this;
-		};
+    this.command = command;
+    this.target = null;
+    this.room = null;
+    this.message = null;
+    this.args = null;
+    this.source = null;
+    this.$attachment = null;
+    this.timestamp = null;
 
-		this.withargs = function() {
-			if (arguments.length !== 0) {
-				this.args = [];
-				for (var j = 0; j < arguments.length; j++) {
-                                        if (arguments[j] !== null) {
-                                            this.args.push(arguments[j]);
-                                        }
-					
-				}
-			}
-			return this;
-		};
-	} 
+    this.to = function (target) {
+        this.target = target;
+        return this;
+    };
 
-	function parseCommands(xml) {
-		var cmdArray = [];
-                $(xml).find('command').each(function(index, elem) {
-                    var $cmd = $(this);
-                    var command = $cmd.attr('command');
-                    var room = $cmd.find('room').text();
-                    var target = $cmd.find('target').text();
-                    var source = $cmd.find('source').text();
-                    var message = $cmd.find('message').text();
-                    var $args = $cmd.find('arg');
-                    var args = [];
-                    $args.each(function(index, elem) {
-                        args.push($(this).text());
-                    });
-                    var parsedCmd = new Command(command).
-                            in(room).
-                            to(target).
-                            from(source).
-                            saying(message).
-                            withargs(args);
-                    cmdArray.push(parsedCmd);
-                });
-                return cmdArray;
-	}
-        
+    this.from = function (source) {
+        this.source = source;
+        return this;
+    };
 
+    this.in = function (room) {
+        this.room = room;
+        return this;
+    };
 
-	function Client(commandUrl, streamUrl) {
+    this.saying = function (message) {
+        this.message = message;
+        return this;
+    };
 
-		this.commandUrl = commandUrl;
-		this.streamUrl = streamUrl;
-		this.streamhandler = null;
-		this.streamerrhandler = null;
-		this.defaultdone = null;
-		this.defaultfail = null;
-		this.started = false;
-		this.mininterval = 2000;
-		this.lastpoll = 0;
+    this.withargs = function () {
+        if (arguments.length !== 0) {
+            this.args = [];
+            for (var j = 0; j < arguments.length; j++) {
+                if (arguments[j] !== null) {
+                    this.args.push(arguments[j]);
+                }
 
-		this.send = function(command, time) {
-			alert('send0');
-			var jqxhr = $.ajax( {
-				url: commandUrl,
-				type: 'GET',
-				data: command,
-				dataType: 'xml',
-				timeout: time ? time: 10000,
-				beforeSend: function(xhr) {
-					xhr.overrideMimeType(postMimeType);
-				}
- 			});
+            }
+        }
+        return this;
+    };
 
-			var cmdprom =new CommandPromise(jqxhr);
-			if (this.defaultdone) {
-				cmdprom.done(this.defaultdone);
-			}
-			if (this.defaultfail) {
-				cmdprom.fail(this.defaultfail);
-			}
-			alert('send');
-			return cmdprom;
+    this.with$attachment = function ($attachment) {
+        this.$attachment = $attachment;
+        return this;
+    };
+}
 
-		};
-                
-
-		this.startread = function(streamhandler, streamerrhandler) {
-			this.streamhandler = streamhandler;
-			this.streamerrhandler = streamerrhandler;
-			this.started = true;
-			this.poll(this);
-		};
-
-		this.stopread = function() {
-			this.started = false;
-			this.streamhandler = null;
-			this.streamerrhandler = null;
-		};
+function parseCommands(xml) {
+    console.log("parsing commands from xml", xml);
+    var cmdArray = [];
+    $(xml).find('command').each(function () {
+        var $cmd = $(this);
+        var command = $cmd.attr('command');
+        var room = $cmd.find('room').text();
+        var target = $cmd.find('target').text();
+        var source = $cmd.find('source').text();
+        var message = $cmd.find('message').text();
+        var timestamp = $cmd.find('timestamp').text();
+        var $attachment = $cmd.find('attachment');
+        var $args = $cmd.find('arg');
+        var args = [];
+        $args.each(function (index, elem) {
+            args.push($(this).text());
+        });
+        var parsedCmd = new Command(command).
+                in(room).
+                to(target).
+                from(source).
+                saying(message).
+                with$attachment($attachment).
+                withargs(args);
+        parsedCmd.timestamp = timestamp;
+        console.log("parsed command", parsedCmd);
+        cmdArray.push(parsedCmd);
+    });
+    return cmdArray;
+}
 
 
-		this.nextpoll = function(c) {
-				if (!c.started) {
-					return;
-				}
-			 	var t = (new Date()).getTime();
- 				var deltat = t - c.lastpoll;
- 				if (deltat < c.mininterval) {
- 					setTimeout( function() {
- 						t = (new Date()).getTime();
- 						c.lastpoll = t;
- 						c.poll(c);
- 					}, c.mininterval - deltat);
- 				} else {
- 					 	c.lastpoll = t;
- 						c.poll(c);
- 				}
-		};
 
-		this.poll = function(c) {
-			alert('poll');
-			var jqxhr = $.ajax( {
-				url: this.streamUrl,
-				type: 'GET',
-				dataType: 'xml',
-				timeout: 60000
- 			});
- 			alert('poll2');
- 			
- 			var sf = function(xml) {
- 				alert('sf' + this.streamUrl);
- 				var cmds = parseCommands(xml);
- 				if (c.streamhandler) {
- 					for (var j = 0; cmds !== null && j < cmds.length; j++) {
- 						c.streamhandler(cmds[j]);
- 					}
- 				}
- 				c.nextpoll(c);
- 			};
+function Client(commandUrl, streamUrl) {
 
- 			var ff = function(req, stat, errmsg) {
- 				if (c.streamerrhandler) {
- 					alert('this: ' );
- 					c.streamerrhandler(req, stat, errmsg);
- 				}
- 				alert('huh');
- 				c.nextpoll(c);
- 			};
+    this.commandUrl = commandUrl;
+    this.streamUrl = streamUrl;
+    this.streamhandler = null;
+    this.streamerrhandler = null;
+    this.defaultdone = null;
+    this.defaultfail = null;
+    this.started = false;
+    this.mininterval = 2000;
+    this.lastpoll = 0;
 
- 			//var cf = function() {c.poll(c);}
- 			//setTimeout(cf, 5000);
- 			jqxhr.done(sf);
- 			jqxhr.fail(ff);
-		}; 
+    this.send = function (command, time) {
+        console.log("sending command", command);
+        var jqxhr = $.ajax({
+            url: commandUrl,
+            type: 'POST',
+            data: command,
+            dataType: 'xml',
+            timeout: time ? time : 10000,
+            beforeSend: function (xhr) {
+                xhr.overrideMimeType(postMimeType);
+            }
+        });
 
-	} 
+        var cmdprom = new CommandPromise(jqxhr);
+        if (this.defaultdone) {
+            cmdprom.done(this.defaultdone);
+        }
+        if (this.defaultfail) {
+            cmdprom.fail(this.defaultfail);
+        }
+        console.log("sent command", command);
+        return cmdprom;
+
+    };
 
 
-	function Result(xml) {
+    this.startread = function (streamhandler, streamerrhandler) {
+        this.streamhandler = streamhandler;
+        this.streamerrhandler = streamerrhandler;
+        this.started = true;
+        this.poll(this);
+    };
+
+    this.stopread = function () {
+        this.started = false;
+        this.streamhandler = null;
+        this.streamerrhandler = null;
+    };
 
 
-		this.xml = xml;
+    this.nextpoll = function (c) {
+        if (!c.started) {
+            return;
+        }
+        var t = (new Date()).getTime();
+        var deltat = t - c.lastpoll;
+        if (deltat < c.mininterval) {
+            setTimeout(function () {
+                t = (new Date()).getTime();
+                c.lastpoll = t;
+                c.poll(c);
+            }, c.mininterval - deltat);
+        } else {
+            c.lastpoll = t;
+            c.poll(c);
+        }
+    };
 
-		this.succeeded = function() {
-			var status = xml.getElementsByTagName('result')[0].getAttribute('status');
-			if (status.toUpperCase() === 'SUCCESS') {
-				return true;
-			} else {
-				return false;
-			}
-		};
+    this.poll = function (c) {
+        var t = new Date().getTime();
+        var jqxhr = $.ajax({
+            url: this.streamUrl,
+            type: 'GET',
+            data: {
+                't' : t
+            },
+            dataType: 'xml',
+            timeout: 60000
+        });
+        console.log('polling stream');
 
-		this.getBody = function() {
-			if (this.succeeded()) {
-				var content = xml.getElementsByTagName('content')[0];
-				return content;
-			} else {
-				var errmsg = xml.getElementsByTagName('error')[0];
-				return errmsg.textContent;
-			}
-		};
- 	}
+        var sf = function (xml, a, b) {
+            //alert(a + b);
+            console.log("success polling", xml);
+            var cmds = parseCommands(xml);
+            if (c.streamhandler) {
+                //alert('poll got ' + cmds.length + ' cmds');
+                for (var j = 0; cmds !== null && j < cmds.length; j++) {
+                    c.streamhandler(cmds[j]);
+                }
+            }
+            c.nextpoll(c);
+        };
 
- 	 function CommandPromise(jqxhr) {
+        var ff = function (req, stat, errmsg) {
+            console.log("failure polling", req, stat, errmsg);
+            if (c.streamerrhandler) {
+                c.streamerrhandler(req, stat, errmsg);
+            }
+            c.nextpoll(c);
+        };
 
- 		this.jqxhr = jqxhr;
+        //var cf = function() {c.poll(c);}
+        //setTimeout(cf, 5000);
+        jqxhr.done(sf);
+        jqxhr.fail(ff);
+    };
 
- 		this.done = function(callback) {
- 			alert('done');
- 			var f = function(xml) {
- 				var rslt = new Result(xml);
- 				if (rslt.succeeded()) {
- 					callback(rslt.getBody());
- 				}
- 			};
- 			this.jqxhr.done(f);
- 			return this;
- 		};
+}
 
- 		this.fail = function(callback) {
- 			alert('fail');
- 			var f0 = function(xml) {
- 				var rslt = new Result(xml);
- 				if (!rslt.succeeded()) {
- 					callback(rslt.getBody());
- 				}
- 			};
- 			var f1 = function(req) {
- 				callback(req.status + ': ' + req.statusText);
- 			};
- 			this.jqxhr.done(f0).fail(f1);
- 			return this;
- 		};
- 	} 
+
+function Result(xml) {
+
+    this.xml = xml;
+
+    this.succeeded = function () {
+        var status = xml.getElementsByTagName('result')[0].getAttribute('status');
+        if (status.toUpperCase() === 'SUCCESS') {
+            return true;
+        } else {
+            return false;
+        }
+    };
+
+    this.getBody = function () {
+        if (this.succeeded()) {
+            var content = xml.getElementsByTagName('content')[0];
+            return content;
+        } else {
+            var errmsg = xml.getElementsByTagName('error')[0];
+            return errmsg.textContent;
+        }
+    };
+}
+
+function CommandPromise(jqxhr) {
+
+    this.jqxhr = jqxhr;
+
+    this.done = function (callback) {
+        var f = function (xml) {
+            var rslt = new Result(xml);
+            if (rslt.succeeded()) {
+                console.log("command successful", rslt.getBody());
+                callback(rslt.getBody());
+            }
+        };
+        this.jqxhr.done(f);
+        return this;
+    };
+
+    this.fail = function (callback) {
+        var f0 = function (xml) {
+            var rslt = new Result(xml);
+            if (!rslt.succeeded()) {
+                console.log("command received error result", rslt.getBody());
+                callback(rslt.getBody());
+            }
+        };
+        var f1 = function (req) {
+            console.log("command failed", req);
+            callback(req.status + ': ' + req.statusText);
+        };
+        this.jqxhr.done(f0).fail(f1);
+        return this;
+    };
+}
 
 
 

@@ -22,10 +22,11 @@ public class ListUsersCommand extends CommandMessage {
 
     public ListUsersCommand(String room) {
         super("listusers", null, room, null);
+        super.persistable = false;
     }
 
     public ListUsersCommand() {
-
+        super.persistable = false;
     }
 
     @Override

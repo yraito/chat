@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import webchat.core.command.HeartbeatCommand;
 import webchat.core.command.LoginCommand;
 import webchat.core.command.LogoutCommand;
 
@@ -31,6 +32,7 @@ public class CommandMessages {
 		commands.put("create", CreateCommand.class);
 		commands.put("destroy", DestroyCommand.class);
 		commands.put("grant", GrantCommand.class);
+                commands.put("heartbeat", HeartbeatCommand.class);
 		commands.put("join", JoinCommand.class);
 		commands.put("kick", KickCommand.class);
 		commands.put("leave", LeaveCommand.class);

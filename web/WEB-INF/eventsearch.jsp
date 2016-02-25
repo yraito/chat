@@ -51,6 +51,11 @@
             <input type="checkbox" name="types[]" value="status" >Status
         </div>
 
+        <h3>Timestamp</h3>
+        <div>
+            <input type="datetime-local" name="startdate" value="2016-01-31T20:55:55.123">Start
+            <input type="datetime-local" name="enddate" value="2016-02-31T20:55:55.123"> End
+        </div>
     </jsp:attribute>
 
     <jsp:attribute name="sortOptions">
@@ -73,7 +78,7 @@
             <tbody>
                 <c:forEach var="eventRecord" items="${records}">
                     <tr>
-                        <td>${eventRecord.timestamp}</td>
+                        <td><t:datetime timeMillis="${eventRecord.timestamp}" /></td>
                         <td>${eventRecord.roomName}</td>
                         <td>${eventRecord.type}</td>
                         <td>${eventRecord.sourceName}</td>

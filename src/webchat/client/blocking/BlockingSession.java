@@ -6,64 +6,36 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.ConcurrentHashMap;
+import webchat.client.ChatFuture;
 
 import webchat.client.ChatSession;
 import webchat.core.*;
 import webchat.core.command.CreateCommand;
 import webchat.core.command.JoinCommand;
 import webchat.core.command.ListRoomsCommand;
+import webchat.core.command.StatusCommand;
+import webchat.core.command.LeaveCommand;
+import webchat.core.command.DestroyCommand;
 
 public class BlockingSession {
 
-    public static <T> T waitFor(Future<T> future, long ctxTimeout) throws ConnectionException, ProtocolException {
-
-        try {
-
-            try {
-                return future.get(ctxTimeout, TimeUnit.MILLISECONDS);
-            } catch (ExecutionException e) {
-                throw e.getCause();
-            } catch (TimeoutException | InterruptedException e) {
-                throw new ConnectionException(e);
-            }
-        } catch (IOException e) {
-            throw new ConnectionException(e);
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
-        }
-    }
-
-    private String userName;
-    private String userPass;
-    private ChatSession channel;
-    private Map<String, BlockingChannel> openChannels = new HashMap<>();
-    private List<SessionListener> sessListeners = new LinkedList<>();
-    private EventManager eventManager;
-    private long timeoutMs = 10000;
+    private final String userName;
+    private final String userPass;
+    ChatSession wrappedSess;
+    private final EventManager eventManager;
+    private final Map<String, BlockingRoom> openRooms = new ConcurrentHashMap<>();
+    private UserStatus userStatus;
 
     public BlockingSession(String userName, String userPass, ChatSession channel, EventManager eventManager) {
         this.userName = userName;
         this.userPass = userPass;
-        this.channel = channel;
+        this.wrappedSess = channel;
         this.eventManager = eventManager;
     }
 
     public EventManager getEventManager() {
         return eventManager;
-    }
-
-    public long getTimeout() {
-        return timeoutMs;
-    }
-
-    public void setTimeout(long timeoutMs) {
-        this.timeoutMs = timeoutMs;
     }
 
     public String getUsername() {
@@ -74,11 +46,24 @@ public class BlockingSession {
         return userPass;
     }
 
-    public Collection<BlockingChannel> getOpenChannels() {
-        return openChannels.values();
+    public UserStatus getUserStatus() {
+        return userStatus;
     }
 
-    public List<RoomInfo> getAvailableChannels() throws IOException, ChatException {
+    public Collection<BlockingRoom> getOpenRooms() {
+        return openRooms.values();
+    }
+
+    public BlockingRoom getOpenRoom(String roomName) {
+        return openRooms.get(roomName.toLowerCase());
+    }
+
+    public void changeStatus(UserStatus us) throws IOException, ChatException {
+        writeRead(new StatusCommand(us));
+        userStatus = us;
+    }
+
+    public List<RoomInfo> getRoomList() throws IOException, ChatException {
         ResultMessage rm = writeRead(new ListRoomsCommand());
         if (!(rm.getResult() instanceof List)) {
             throw new ProtocolException("Expected list, but got " + rm.getResult().getClass());
@@ -94,71 +79,62 @@ public class BlockingSession {
         return rtrnList;
     }
 
-    public BlockingChannel openChannel(String room) throws IOException, ChatException {
-        ResultMessage rm = writeRead(new JoinCommand(room));
-        return makeChatChannel(rm);
+    public BlockingRoom joinRoom(String room) throws IOException, ChatException {
+        return createBlockingRoom(new JoinCommand(room));
     }
 
-    public BlockingChannel openChannel(String room, String password) throws IOException, ChatException {
-        ResultMessage rm = writeRead(new JoinCommand(room, password));
-        return makeChatChannel(rm);
+    public BlockingRoom joinRoom(String room, String password) throws IOException, ChatException {
+        return createBlockingRoom(new JoinCommand(room, password));
     }
 
-    public BlockingChannel createChannel(String room) throws IOException, ChatException {
-        ResultMessage rm = writeRead(new CreateCommand(room));
-        return makeChatChannel(rm);
+    public BlockingRoom createRoom(String room) throws IOException, ChatException {
+        return createBlockingRoom(new CreateCommand(room));
     }
 
-    public BlockingChannel createChannel(String room, String password) throws IOException, ChatException {
-        ResultMessage rm = writeRead(new CreateCommand(room, password));
-        return makeChatChannel(rm);
+    public BlockingRoom createRoom(String room, String password) throws IOException, ChatException {
+        return createBlockingRoom(new CreateCommand(room, password));
     }
 
-    public void disconnect() {
-        channel.close();
-    }
-
-    private BlockingChannel makeChatChannel(ResultMessage resultMsg) throws ProtocolException {
-        if (!(resultMsg.getResult() instanceof RoomBean)) {
-            throw new ProtocolException("Expecting RoomBean, got " + resultMsg.getResult().getClass() + ": " + resultMsg);
+    public void leaveRoom(String room) throws IOException, ChatException {
+        writeRead(new LeaveCommand(room));
+        BlockingRoom br = openRooms.remove(room.toLowerCase());
+        if (br != null) {
+            br.close();
         }
-        RoomBean room = (RoomBean) resultMsg.getResult();
-        BlockingChannel channel = new BlockingChannel();
-        channel.init(room, this);
-        notifyJoin(channel);
-        return channel;
+    }
 
+    public void destroyRoom(String room) throws IOException, ChatException {
+        writeRead(new DestroyCommand(room));
+        BlockingRoom br = openRooms.remove(room.toLowerCase());
+        if (br != null) {
+            br.close();
+        }
+    }
+
+    public void close() {
+        for (BlockingRoom room : getOpenRooms()) {
+            try {
+                leaveRoom(room.getName());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        wrappedSess.close();
     }
 
     public ResultMessage writeRead(CommandMessage cm) throws IOException, ChatException {
-        Future<ResultMessage> futureResp = channel.writeFuture(cm, null);
-        ResultMessage rm = waitFor(futureResp, timeoutMs);
+        ChatFuture<ResultMessage> futureResp = wrappedSess.writeFuture(cm);
+        ResultMessage rm = futureResp.getUninterruptibly();
         if (rm.isError()) {
             throw new ChatException(rm.getError());
         }
         return rm;
     }
 
-    public void addListener(SessionListener sl) {
-        if (!sessListeners.contains(sl)) {
-            sessListeners.add(sl);
-        }
+    private BlockingRoom createBlockingRoom(CommandMessage cmdMsg) throws IOException, ChatException {
+        BlockingRoom blockingRoom = BlockingRoom.create(this, cmdMsg.getRoomName());
+        writeRead(cmdMsg);
+        openRooms.put(cmdMsg.getRoomName().toLowerCase(), blockingRoom);
+        return blockingRoom;
     }
-
-    public void removeListener(SessionListener sl) {
-        sessListeners.remove(sl);
-    }
-
-    public void notifyJoin(BlockingChannel ch) {
-        for (SessionListener sl : sessListeners) {
-            sl.onJoinChannel(ch);
-        }
-    }
-
-    public void notifyLeave(BlockingChannel ch) {
-        for (SessionListener sl : sessListeners) {
-            sl.onLeaveChannel(ch);
-        }
-    }
-
 }

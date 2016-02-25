@@ -32,7 +32,7 @@ public class QueryParts {
 		}
 		if ( limitNum != null) {
 			if (limitStart != null) {
-				s += " LIMIT " + (limitStart + 1) + "," + limitNum;
+				s += " LIMIT " + limitStart + "," + limitNum;
 			} else {
 				s += " LIMIT " + limitNum;
 			}

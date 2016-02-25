@@ -10,6 +10,6 @@ public class MySQLEventDao extends MySQLGenericDao<EventRecord> implements Event
     public MySQLEventDao(Mapping insertMapping, Mapping selectMapping, Connection conn) {
         super(insertMapping, selectMapping, conn, null, EventRecord.class);
     }
-
+  
 
 }

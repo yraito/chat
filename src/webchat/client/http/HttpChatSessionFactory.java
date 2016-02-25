@@ -1,77 +1,72 @@
 package webchat.client.http;
 
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.SettableFuture;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.util.LinkedList;
 import java.util.concurrent.Future;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
-import org.apache.http.impl.nio.client.HttpAsyncClients;
-import org.apache.http.message.BasicNameValuePair;
 
-import webchat.client.ChatHandler;
-import webchat.client.ChatSession;
-import webchat.client.ChatSessionFactory;
+import webchat.servlet.api.Formatter;
+import webchat.core.*;
+import webchat.core.command.*;
+import webchat.client.*;
+
+import static webchat.util.Util.*;
 
 public class HttpChatSessionFactory implements ChatSessionFactory {
 
     String streamUrl;
     String commandUrl;
+    Formatter formatter;
+    ListeningExecutorService execService;
 
-
-    public HttpChatSessionFactory(String commandUrl, String streamUrl) {
+    public HttpChatSessionFactory(String commandUrl, String streamUrl, Formatter formatter) {
         this.streamUrl = streamUrl;
         this.commandUrl = commandUrl;
+        this.formatter = formatter;
     }
 
     @Override
-    public Future<ChatSession> open(String userName, String password, ChatHandler ioh) throws IOException{
+    public ChatFuture<ChatSession> open(String userName, String password, ChatHandler ioh) throws IOException {
+        HttpClientContext httpContext = HttpClientContext.create();
+        httpContext.setCookieStore(new BasicCookieStore());
+        HttpMessageSender sender = new HttpMessageSender(httpContext, commandUrl, formatter);
+        ChatFuture<ResultMessage> futureCmd = sender.writeFuture(new LoginCommand(userName, password));
+        SettableFuture<ChatSession> futureSession = SettableFuture.create();
+        futureCmd.addCallback(new ChatCallback<ResultMessage>() {
 
-        try (CloseableHttpAsyncClient httpClient = HttpAsyncClients.createDefault()) {
-            HttpClientContext localContext = HttpClientContext.create();
-            localContext.setCookieStore(new BasicCookieStore());
-            httpClient.start();
-            HttpPost loginReq = new HttpPost(commandUrl);
-            LinkedList<NameValuePair> paramLst = new LinkedList<>();
-            paramLst.add(new BasicNameValuePair("args", userName));
-            paramLst.add(new BasicNameValuePair("args", password));
-            loginReq.setEntity(new UrlEncodedFormEntity(paramLst));
-            FutureCallback<HttpResponse> callback = null; //TODO
-            final Future<HttpResponse> futureResp = httpClient.execute(loginReq, localContext, null);
-            return new ChatSessionFuture(futureResp, ioh, localContext);
+            @Override
+            public void onCompleted(ResultMessage rm) {
+                HttpChatSession chatSess = null;
+                HttpMessageReceiver receiver = null;
+                try {
+                    if (rm.isError()) {
+                        futureSession.setException(new ChatException(rm.getError()));
+                    } else {
+                        receiver = new HttpMessageReceiver(httpContext, streamUrl, formatter);
+                        chatSess = new HttpChatSession(sender, receiver, ioh);
+                        chatSess.start();
+                        futureSession.set(chatSess);
+                        ioh.onSessionOpened(chatSess);
+                    }
+                } catch (Throwable t) {
+                    futureSession.setException(t);
+                    closeQuietly(chatSess);
+                    closeQuietly(receiver);
+                    t.printStackTrace();
+                }
+            }
 
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+            @Override
+            public void onError(Throwable t) {
+                futureSession.setException(t);
+                closeQuietly(sender);
+                t.printStackTrace();
+            }
+        });
+
+        return new FutureAdapter(futureSession);
     }
 
-    private class ChatSessionFuture extends HttpWrappingFuture<ChatSession> {
-
-        ChatHandler chatHandler;
-        HttpClientContext httpContext;
-
-        ChatSessionFuture(Future<HttpResponse> inner, ChatHandler chatHandler, HttpClientContext httpContext) {
-            super(inner, ChatSession.class);
-            this.chatHandler = chatHandler;
-            this.httpContext = httpContext;
-        }
-
-        @Override
-        protected ChatSession convert(InputStream is, HttpResponse hr) throws IOException {
-
-            HttpOutputChatChannel httpOut = new HttpOutputChatChannel(httpContext, commandUrl);
-            HttpInputStreamReceiver httpIn = new HttpInputStreamReceiver(httpContext, streamUrl, httpOut, chatHandler);
-            httpIn.start();
-            return httpOut;
-        }
-    }
-    
 }

@@ -36,7 +36,7 @@ public class ApiStreamServlet extends HttpServlet {
      */
     private static final long serialVersionUID = 1L;
 
-    private ResponseStrategy strategy = new LongPollingResponseStrategy();
+    private ResponseStrategy strategy = new PollingResponseStrategy();
 
     @Override
     public void init() throws ServletException {
