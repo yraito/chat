@@ -50,6 +50,7 @@ public class DestroyCommand extends CommandMessage {
         } finally {
             mgr.getLockManager().releaseLock(roomNameLower);
         }
+        
     }
 
 }

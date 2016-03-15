@@ -11,9 +11,13 @@ import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import webchat.core.*;
 import webchat.core.command.JoinCommand;
 
@@ -67,7 +71,9 @@ public class CommandMessageConverter implements Converter {
         }
         Object attachment = cmd.getAttachment();
         if (attachment != null) {
+            System.out.println(attachment);
             writer.startNode("attachment");
+            writer.addAttribute("class", attachment.getClass().getName());
             mc.convertAnother(attachment);
             writer.endNode();
         }
@@ -89,6 +95,7 @@ public class CommandMessageConverter implements Converter {
             reader.moveDown();
             String nodeName = reader.getNodeName();
             String nodeValue = reader.getValue();
+            //System.out.println(reader.getAttribute("class"));
             switch (nodeName) {
                 case "source":
                     source = nodeValue;
@@ -114,7 +121,22 @@ public class CommandMessageConverter implements Converter {
                     }
                     break;
                 case "attachment":
-                    attachment = nodeValue;
+                  
+                    String clazzName = reader.getAttribute("class");
+                    System.out.println(clazzName);
+                    if (clazzName == null) {
+                        System.out.println("null clazz attribute");
+                        //break;
+                    }
+                      //reader.moveDown();
+                    try {
+                        //Class clazz = Class.forName(clazzName);
+                        attachment = uc.convertAnother(uc.currentObject(), RoomSnapshot.class);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    } finally {
+                        //reader.moveUp();
+                    }
                     break;
             }
             reader.moveUp();
@@ -129,10 +151,13 @@ public class CommandMessageConverter implements Converter {
         if (args != null) {
             cm.setOtherArgs(args);
         }
+        if (attachment != null) {
+            cm.setAttachment(attachment);
+        }
         return cm;
     }
 
-    public static void main(String[] args) throws IOException{
+    public static void main(String[] args) throws IOException {
         Formatter f = new XStreamFormatter();
         JoinCommand joinCmd = new JoinCommand("abc", "def");
         RoomSnapshot.RoomUser userA = new RoomSnapshot.RoomUser("abd", RoomSnapshot.RoomPrivs.OWNER,
@@ -144,6 +169,12 @@ public class CommandMessageConverter implements Converter {
         users.add(userB);
         RoomSnapshot rs = new RoomSnapshot("ssfs", "sfsdfs", users);
         joinCmd.setAttachment(rs);
+        System.out.println(joinCmd);
         f.writeMessage(joinCmd, System.out);
+        System.out.println();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        f.writeMessage(joinCmd, baos);
+        Message m = f.readMessage(new ByteArrayInputStream(baos.toByteArray()));
+        System.out.println(m);
     }
 }

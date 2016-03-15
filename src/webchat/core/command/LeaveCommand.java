@@ -39,16 +39,20 @@ public class LeaveCommand extends CommandMessage {
             RoomBean rm = mgr.getRoom(roomNameLower);
             //If user is owner, randomly select new owner from user list
             //What if no users left after leave? Destroy room? If not, who is owner?
-            if (rm.listUsers().size() > 1 && srcName.equalsIgnoreCase(rm.getOwner())) {
+            String origOwner = rm.getOwner();
+            rm.removeUser(srcName);
+            System.out.println("Source: " + srcName + "; Owner: " + rm.getOwner());
+            if (rm.listUsers().size() > 0 && srcName.equalsIgnoreCase(origOwner)) {
                 String newOwnr = rm.chooseRandomUser();
                 rm.setOwner(newOwnr);
                 clearArgs();
                 addArg(newOwnr);
+                System.out.println("New owner: " + newOwnr);
                 //security problem, need to clear args
             }
-            
+            mgr.dispatchMessage(this, cs);
             mgr.dispatchMessage(this, roomNameLower);
-            rm.removeUser(srcName);
+
             if (!rm.isLobby() && rm.listUsers().isEmpty()) {
                 mgr.removeRoom(rm);
             }

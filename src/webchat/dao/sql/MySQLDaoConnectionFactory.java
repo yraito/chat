@@ -7,10 +7,13 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import webchat.core.ConfigurationException;
 import webchat.dao.*;
 import webchat.dao.dto.UserRecord;
+import webchat.dao.sql.query.QueryBuilder;
 import webchat.util.PasswordHash;
 
 public class MySQLDaoConnectionFactory implements DaoConnectionFactory {
@@ -19,6 +22,8 @@ public class MySQLDaoConnectionFactory implements DaoConnectionFactory {
 
     private static MySQLDaoConnectionFactory instance;
 
+    private QueryBuilder qb;
+    private Class<?> qbClazz;
     public synchronized static MySQLDaoConnectionFactory getInstance() {
         if (instance == null) {
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
@@ -39,20 +44,36 @@ public class MySQLDaoConnectionFactory implements DaoConnectionFactory {
             String driver = properties.getProperty("driver");
             String username = properties.getProperty("username");
             String password = properties.getProperty("password");
-
+            
+            
             instance = new MySQLDaoConnectionFactory(url, driver, username, password);
+        
+            String qbS = properties.getProperty("querybuilder");
+            try {
+                instance.qbClazz = Class.forName(qbS);
+                Object o = instance.qbClazz.newInstance();
+                instance.qb = (QueryBuilder) o;
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | ClassCastException ex) {
+                throw new ConfigurationException("Can't instantiate a QueryBuilder of class " + qbS, ex);
+            } 
         }
 
         return instance;
     }
+    
+    
 
     private String jdbdS;
-
+    private String user;
+    String password;
+    
     private MySQLDaoConnectionFactory(String url, String driver, String usr, String pass) {
-        jdbdS = url + "?user=" + usr + "&password=" + pass;
+        jdbdS = url;// + "?user=" + usr + "&password=" + pass;
+        user = usr;
+        password = pass;
         try {
-            Class.forName(driver);
-        } catch (ClassNotFoundException e) {
+            Class.forName(driver).newInstance();
+        } catch (Exception e) {
             throw new ConfigurationException(e);
         }
     }
@@ -67,9 +88,18 @@ public class MySQLDaoConnectionFactory implements DaoConnectionFactory {
     }
 
     protected Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(jdbdS);
+        return DriverManager.getConnection(jdbdS, user, password);
     }
 
+    public QueryBuilder getQueryBuilder() {
+             try {
+     
+                Object o = qbClazz.newInstance();
+                return (QueryBuilder) o;
+            } catch ( InstantiationException | IllegalAccessException | ClassCastException ex) {
+                throw new ConfigurationException("Can't instantiate a QueryBuilder of class " + qbClazz, ex);
+            } 
+    }
     public static void main(String[] ss) throws Exception {
         MySQLDaoConnectionFactory df = MySQLDaoConnectionFactory.getInstance();
         try (DaoConnection dc = df.openDaoConnection()){

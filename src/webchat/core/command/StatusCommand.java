@@ -39,7 +39,7 @@ public class StatusCommand extends CommandMessage {
         try {
             mgr.getLockManager().acquireLock(srcNameLower);
             mgr.setUserStatus(srcName, usrStat);
-
+            mgr.dispatchMessage(this, cs);
             for (RoomBean r : mgr.getRooms()) {
 
                 if (!r.hasUser(srcName)) {
@@ -49,7 +49,7 @@ public class StatusCommand extends CommandMessage {
                 try {
                     //create room snapshot, receive status update, receive room snapshot
                     mgr.getLockManager().acquireLock(roomNameLower);
-                    mgr.dispatchMessage(this, roomNameLower);
+                    mgr.dispatchMessage(this, roomNameLower, cs);
                 } finally {
                     mgr.getLockManager().releaseLock(roomNameLower);
                 }

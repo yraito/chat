@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
+              <base href="../" />
         <link rel="stylesheet" href="theme.css">
         <link rel="stylesheet" href="loginregister.css">
         <title>Register</title>
@@ -18,7 +19,7 @@
         <div id="content">
             <h2>Create Account</h2>
             <p id="status"></p>	
-            <form action="processlogin" method="post">
+            <form action="web/processlogin" method="post">
                 <label for="username" >Username: </label>
                 <input class ="txtin" id="username" type="text" name="username" required="required" maxlength=30 />
                 <br />
@@ -31,7 +32,7 @@
                 <input type="hidden" name="agent" value="false" /> 
                 <button class = "btn btn-default" type ="submit" id ="btn">Submit</button>
             </form>
-            <p>Already have an account? <a href="login">Login</a></p>
+            <p>Already have an account? <a href="web/login">Login</a></p>
         </div>
 
         <script type="text/javascript" src="jquery-1.12.0.min.js"></script>

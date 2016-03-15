@@ -21,7 +21,7 @@ import javax.xml.bind.Unmarshaller;
 public class WeatherFetcher {
 
 	
-	private String apiKey = "2de143494c0b295cca9337e1e96b00e0";
+	private String apiKey = "7a8c31db1686c60299f13ee1ee425e29";
 
 	private String urlS = "http://api.openweathermap.org/data/2.5/weather";
 	

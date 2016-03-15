@@ -13,7 +13,7 @@ public class WeatherFunctionHandler implements FunctionHandler  {
 	
 	public WeatherFunctionHandler() {
 		MessagePattern mp = new MessagePattern();
-		mp.concat("What's ", "What is ", "How's ", "How is ")
+		mp.concat("what's ", "what is ", "how's ", "how is ")
 			.concat("the ").concat("temperature ", "weather ")
 			.concat("in ").concatArg(0, 1, 100)
 			.concat("\\?*");

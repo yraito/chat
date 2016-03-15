@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <base href="../" />
         <link rel="stylesheet" href="theme.css">
         <link rel="stylesheet" href="loginregister.css">
         <title>Login</title>
@@ -21,7 +22,7 @@
         <div id="content">
             <h2>Sign In</h2>
             <p id="status"></p>	
-            <form action="processLogin" method="post">
+            <form action="web/processLogin" method="post">
                 <label for="username">Username: </label>
                 <input class ="txtin" type="text" id="username" name="username" required="required" maxlength=30 />
                 <br />
@@ -30,7 +31,7 @@
                 <br />
                 <button class = "btn btn-default" type ="submit" id ="btn">Submit</button>
             </form>
-            <p>New user? <a href="register">Register</a></p>
+            <p>New user? <a href="web/register">Register</a></p>
         </div>
   
         <script type="text/javascript" src="jquery-1.12.0.min.js"></script>
@@ -40,7 +41,7 @@
 
             $('form').on('submit', function (e) {
                 e.preventDefault();
-                submitFormAjax('processLogin', $('#status'), 'main');
+                submitFormAjax('web/processLogin', $('#status'), 'main');
             });
         </script>
     </body>

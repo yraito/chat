@@ -112,9 +112,11 @@ public class UserAccountServlet extends HttpServlet {
         } catch (DaoException e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             resp.getWriter().print(e.getMessage());
+            e.printStackTrace();
         } catch (ServletException e) {
             resp.setStatus(HttpServletResponse.SC_CONFLICT);
             resp.getWriter().print(e.getMessage());
+            e.printStackTrace();
         } finally {
             resp.getWriter().close();
         }
@@ -136,7 +138,7 @@ public class UserAccountServlet extends HttpServlet {
             errMsgs.add("Cannot delete own account");
         }
         
-        Boolean delete = Parser.parseBoolean(activeParam, null);
+        Boolean delete = ParamParser.parseBoolean(activeParam, null);
         if (activeParam != null && delete == null) {
             errMsgs.add("Unable to parse parameter \"delete\": " + activeParam);
         }
@@ -150,7 +152,7 @@ public class UserAccountServlet extends HttpServlet {
         try (DaoConnection daoConn = daoFactory.openDaoConnection()) {
             UserRecord modifyUser = null;
             if (idParam != null) {
-                Integer userId = Parser.parseInt(idParam);
+                Integer userId = ParamParser.parseInt(idParam);
                 if (userId != null) {
                     modifyUser = daoConn.getUserDao().findById(userId);
                 }
@@ -187,9 +189,11 @@ public class UserAccountServlet extends HttpServlet {
         }catch (DaoException e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             resp.getWriter().print(e.getMessage());
+            e.printStackTrace();
         } catch (ServletException e) {
             resp.setStatus(HttpServletResponse.SC_CONFLICT);
             resp.getWriter().print(e.getMessage());
+            e.printStackTrace();
         } finally {
             resp.getWriter().close();
         }

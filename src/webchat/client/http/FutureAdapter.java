@@ -12,8 +12,6 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import webchat.client.FutureCommand;
-import webchat.core.ResultMessage;
 import webchat.client.ChatCallback;
 import webchat.client.ChatFuture;
 
@@ -81,8 +79,9 @@ public class FutureAdapter<V> implements ChatFuture<V> {
     }
 
     @Override
-    public void addCallback(ChatCallback<V> callback) {
+    public ChatFuture<V> addCallback(ChatCallback<V> callback) {
         Futures.addCallback(wrappedFut, new CallbackAdapter(callback));
+        return this;
     }
 
 }

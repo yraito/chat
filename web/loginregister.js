@@ -31,7 +31,7 @@ function submitFormAjax(actionUrl, $statusElem, redirUrl) {
 }
 
 function showLoader($elem) {
-    $('#status').html('<img src="images/loading.gif" />');
+    $('#status').html('<img src="./images/loading.gif" />');
 }
 
 function hideLoader($elem) {

@@ -203,6 +203,7 @@ function Client(commandUrl, streamUrl) {
         jqxhr.fail(ff);
     };
 
+
 }
 
 
@@ -256,7 +257,7 @@ function CommandPromise(jqxhr) {
         };
         var f1 = function (req) {
             console.log("command failed", req);
-            callback(req.status + ': ' + req.statusText);
+            callback(req.status + ': ' + req.statusText, req);
         };
         this.jqxhr.done(f0).fail(f1);
         return this;

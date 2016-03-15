@@ -23,7 +23,7 @@ import webchat.servlet.api.HttpServletClientSession;
 @WebServlet(
         name = "UserLoginLogoutServlet",
         description = "Handle user web login/logout",
-        urlPatterns = {"/processLogin", "/processLogout"}
+        urlPatterns = {"/web/processLogin", "/web/processLogout"}
 )
 public class UserLoginLogoutServlet extends HttpServlet {
 
@@ -39,9 +39,9 @@ public class UserLoginLogoutServlet extends HttpServlet {
         String path = req.getServletPath().toLowerCase();
 
         logger.debug("LoginLogout servlet: received POST request at {}", path);
-        if (path.startsWith("/processlogin")) {
+        if (path.startsWith("/web/processlogin")) {
             loginWeb(req, resp);
-        } else if (path.startsWith("/processlogout")) {
+        } else if (path.startsWith("/web/processlogout")) {
             logoutWeb(req, resp);
         } 
     }

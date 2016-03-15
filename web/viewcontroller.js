@@ -19,6 +19,7 @@ function ViewController(client, view, closeRoomFunc) {
     this.$destroydialog = null;
     this.initX = null;
     this.initY = null;
+    this.recording = false;
 
     this.showWhisperDialog = function () {
         this.$whisperdiv.attr('title', 'Whisper @' + this.targetUser);
@@ -47,7 +48,8 @@ function ViewController(client, view, closeRoomFunc) {
 
                 e.preventDefault();
                 vc.targetUser = $(e.target).parents('tr').find('td.name').text();
-                alert(vc.targetUser + e.pageY + e.pageX);
+                $userMenu.find('.title').text(vc.targetUser);
+                //alert(vc.targetUser + e.pageY + e.pageX);
                 var x = e.pageX - $userTable.offset().left;
                 var y = e.pageY - $userTable.offset().top;
                 $userMenu.finish().toggle(100)
@@ -158,7 +160,7 @@ function ViewController(client, view, closeRoomFunc) {
                 vc.closeRoomFunc();
             }).done(function () {
                 vc.closeRoomFunc();
-                
+
             });
         });
         $destroyBtn.on('click', function () {
@@ -216,6 +218,34 @@ function ViewController(client, view, closeRoomFunc) {
         this.$kickdialog = createDialog($kickdiv, kickfunc);
         this.$destroydialog = createDialog($destroydiv, destroyfunc);
     };
+
+    this.initHistoryControls = function ($recBtn, $playBtn, $histDiv) {
+
+        var vc = this;
+        $recBtn.on('click', function () {
+            if (!vc.recording) {
+                $histDiv.empty();
+                vc.view.$msgHistory = $histDiv;
+                $recBtn.css({
+                    'background-image': 'url("images/stop.png")'
+                });
+            } else {
+                vc.view.$msgHistory = null;
+                $recBtn.css({
+                    'background-image': 'url("images/rec.png")'
+                });
+            }
+            vc.recording = !vc.recording;
+        });
+
+        $playBtn.on('click', function () {
+            var newWindow = window.open('', '', '');
+            var doc = newWindow.document;
+            doc.open();
+            doc.write('<html><head><base href="../"><link rel="stylesheet" type="text/css" href="chatstyle.css" /></head><body><div class="chat-messagepanel">' + $histDiv.html() + '</div></body></html>');
+            doc.close();
+        });
+    }
 }
 
 var createDialog = function ($formdiv, submitfunc) {
@@ -226,8 +256,10 @@ var createDialog = function ($formdiv, submitfunc) {
         //width: 350,
         modal: true,
         close: function () {
-            form[ 0 ].reset();
-            //allFields.removeClass( "ui-state-error" );
+            if (form.length) {
+                form[ 0 ].reset();
+                //allFields.removeClass( "ui-state-error" );
+            }
         }
     });
 

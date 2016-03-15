@@ -59,7 +59,16 @@ public class MySQLGenericDao<T> {
     public void save(T t) throws DaoException {
 
         String table = insertMapping.getEquivTable().toString();
+        
+        Field pkField = insertMapping.getPrimaryKeyField();
+        String pkFieldCol = null;
         Map<String, Object> row = insertMapping.convertToRow(t);
+        if (pkField != null) {
+            pkFieldCol = insertMapping.getEquivColumn(pkField).toString();
+            row.remove(pkFieldCol);
+            logger.debug("save {}. Ignoring primary key col {}", t, pkFieldCol);
+        }
+        
         List<String> colList = new ArrayList<>(row.keySet());
         String cols = newString(colList);
         String vals = newString("?", row.size());
@@ -83,12 +92,19 @@ public class MySQLGenericDao<T> {
 
         String fromClause = selectMapping.getEquivTable().toString();
         List<String> colList = new ArrayList<>();
+        List<String> colDefList = new ArrayList<>();
         for (Field selectedField : selectMapping.getSelectedFields()) {
             ColInfo colInfo = selectMapping.getEquivColumn(selectedField);
             colList.add(colInfo.toString());
+            //
+            String colS = colInfo.toString();
+            if (colS.contains(".")) {
+                colS = colS + " AS " + colS.replace(".", "__");
+            }
+            colDefList.add(colS);
         }
 
-        String cols = newString(colList);
+        String cols = newString(colDefList);
         String selectT = "SELECT " + cols + " FROM " + fromClause + " WHERE LOWER("
                 + findFieldName + ") = ?";
 
@@ -102,12 +118,15 @@ public class MySQLGenericDao<T> {
                 }
                 TreeMap<String, Object> row = new TreeMap<>();
                 for (String colName : colList) {
-                    Object obj = rs.getObject(colName);
+                    //hck
+                    String colNameAlias = colName.replace(".", "__");
+                    //
+                    Object obj = rs.getObject(colNameAlias);
                     row.put(colName, obj);
                 }
                 assert !rs.next();
                 T t = selectMapping.convertFromRow(row, clazz);
-                logger.debug("found {} for find({{}): {}", clazz.getSimpleName(), s, t);
+                logger.debug("found {} for find({}): {}", clazz.getSimpleName(), s, t);
                 return t;
             }
 
@@ -115,9 +134,9 @@ public class MySQLGenericDao<T> {
             throw new DaoException("Exception finding " + s, e);
         }
     }
-    
+
     public void modify(T t) throws DaoException {
-        
+
         String table = insertMapping.getEquivTable().toString();
         Field pkField = insertMapping.getPrimaryKeyField();
         String pkFieldCol = null;
@@ -146,15 +165,27 @@ public class MySQLGenericDao<T> {
             pstmt.setObject(colList.size() + 1, pkValue);
             int nrows = pstmt.executeUpdate();
             assert nrows == 1;
-        } catch(SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             throw new DaoException("Exception modifying  " + t, e);
-            
+
         }
     }
 
     public Searcher<T> searcher() {
-        String cols = "*";
+        //String cols = "*";
+        List<String> colList = new ArrayList<>();
+        for (Field selectedField : selectMapping.getSelectedFields()) {
+            ColInfo colInfo = selectMapping.getEquivColumn(selectedField);
+            //hack
+            String colS = colInfo.toString();
+            if (colS.contains(".")) {
+                colS = colS + " AS " + colS.replace(".", "__");
+            }
+            colList.add(colS);
+        }
+
+        String cols = newString(colList);
         String from = selectMapping.getEquivTable().toString();
         QueryParts qp = new QueryParts(cols, from);
         return new MySQLSearcher(selectMapping, conn, clazz, qp);

@@ -27,9 +27,13 @@ public class LoginCommand extends CommandMessage {
     private final static Logger logger = LoggerFactory.getLogger(CommandMessage.class);
 
     private Authenticator authenticator;
-    
+
     public LoginCommand(String username, String password) {
         super("login", null, null, null, username, password);
+    }
+
+    public LoginCommand(String username, String password, String uuid) {
+        super("login", null, null, null, username, password, uuid);
     }
 
     public LoginCommand() {
@@ -61,7 +65,7 @@ public class LoginCommand extends CommandMessage {
                 result = ResultMessage.error("Invalid credentials");
 
             } else {
-                
+
                 Integer currId = cs.getUserId();
                 String currName = cs.getUserName();
                 //If already logged in under this account, respond success
@@ -70,19 +74,18 @@ public class LoginCommand extends CommandMessage {
                     result = ResultMessage.success();
                     super.persistable = false;
                     //Login successful
-                } 
-                //If already logged in under a different account, respond error
+                } //If already logged in under a different account, respond error
                 else if (currId != null) {
                     logger.debug("Logged in as different user: {} already, sending error", currName);
                     result = ResultMessage.error("Already logged in as " + currName);
-                }
-                //If not logged in, notify chat manager of new session and respond success
+                } //If not logged in, notify chat manager of new session and respond success
                 else {
                     logger.debug("Login successful as {}", usrRecord.getUsername());
                     //Attach user's record to session
 
                     cs.setUser(usrRecord);
                     mgr.onNewSession(cs);
+                    mgr.dispatchMessage(this, cs);
                     result = ResultMessage.success();
                 }
             }

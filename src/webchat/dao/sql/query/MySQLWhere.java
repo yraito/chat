@@ -153,6 +153,9 @@ public class MySQLWhere<T> implements Where<T> {
                     T t = clazz.newInstance();
                     for (Field f : mapping.getSelectedFields()) {
                         String colName = mapping.getEquivColumn(f).toString();
+                        //hack
+                          colName = colName.replace(".", "__");
+                        //
                         Object o = rs.getObject(colName);
                         f.set(t, o);
                     }
@@ -168,6 +171,7 @@ public class MySQLWhere<T> implements Where<T> {
             throw new RuntimeException("Can't instantiate/set new " + clazz.getName(), e);
         }
     }
+    
 
     public static void main(String[] args) {
         LinkedList<Token> l = new LinkedList<>();

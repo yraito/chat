@@ -34,6 +34,7 @@ public class LogoutCommand extends CommandMessage {
             super.persistable = false;
         } else {
             logger.debug("Logging out {}", cs.getUserName());
+            mgr.dispatchMessage(this, cs);
             result = ResultMessage.success();
         }
         cs.closeSession();

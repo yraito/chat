@@ -1,0 +1,356 @@
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="main.css" />
+	</head>
+	<body>
+		<div id="header">
+			<h1>MyChat <small>API</small></h1>
+		</div>
+		<h2>Overview</h2>
+			<p>The chat protocol consists of two message types: Commands and Results.</p>
+			<p>Command are request-type messages sent from a client to the server, specifying an action to execute and its arguments. Successfully executed commands
+				are forwarded to affected users; for example, a 'join' command sent from a client to the server asking to join room X will, on success,
+				be forwarded by the server to all other users in room X. Thus command messages serve a second role-- as notification messages.</p>
+			<p>Results are response-type messages sent back from the server to a client, indicating the success or failure of a command. Error type
+				results will contain an error message, while success types may or may not contain a body</p>
+		<h2>Protocol</h2>
+			<p>Commands should be sent to the server at &lt;context-root&gt;/command as url form encoded GET or POST requests. Each request must 
+				contain a 'command' parameter, indicating the type of command, as well as any required arguments. See the <a href="#commandlist">
+				command list</a> for details.
+			</p>
+			<p>
+				The first command sent to the server must be a 'login' command. 
+			</p>
+			<p>
+				The server will close idle connections after approximately two minutes. Thus a client should periodically send 'heartbeat' commands
+				to keep its connection alive.
+			</p>
+			<p>
+				The server will reply to each command sent to /command with a Result in XML format. The format is:
+				<dl>
+					<dt>Body-less success message</dt>
+					<dd>
+						<pre>
+							<code>
+&lt;ResultMessage type="SUCCESS" /&gt;
+							</code>
+						</pre> 
+					</dd>
+					<dt>Bodied success message</dt>
+					<dd>
+						<pre>
+							<code>
+&lt;ResultMessage type="SUCCESS"&gt;
+	&lt;res&gt;
+		...xml-body
+	&lt;/res&gt;
+&lt;/ResultMessage&gt;
+							</code>
+						</pre> 
+					</dd>
+					<dt>Errur message</dt>
+					<dd>
+						<pre>
+							<code>
+&lt;ResultMessage type="FAILURE"&gt;
+	&lt;err&gt;
+		...error message
+	&lt;/err&gt;
+&lt;/ResultMessage&gt;							</code>
+						</pre> 
+					</dd>
+				</dl>
+		Except for internal server errors, all responses to /command will be sent with a 2xx status code. Any error condition will be indicated
+		by the ResultMessage.
+			</p>
+			<p>Once a client has successfully logged in via a 'login' command to /command, he is allocated a 'stream', which he can fetch via a GET request to
+				<code>&lt;context-root&gt;/stream</code>. A client should poll the /stream url at a small, fixed interval, to receive any new notifications. Notifications are, as mentioned above, XML formatted command messages. The general format is: 
+<pre>
+	<code>
+&lt;Command type="...command name"&gt;
+	&lt;source&gt;...name of source&lt;/source&gt;
+	&lt;timestamp&gt;...time of event&lt;/timestamp&gt;
+	&lt;target&gt;...optional target&lt;/target&gt;
+	&lt;room&gt;...optional room&lt;/room&gt;
+	&lt;message&gt;...optional message&lt;/message&gt;
+	&lt;arg&gt;...zero or more additiona string args&lt;/arg&gt;
+	&lt;attachment&gt;...optional xml attachment&lt;/attachment&gt;
+&lt;/Command&gt;
+	</code>
+</pre>
+			</p>
+		<h2 id="commandlist">Commands</h2>
+		<dl>
+			<dt>Create</dt>
+			<dd>
+				<p>create a new public or private room</p>
+				<ul>
+		
+					<li><strong>Arguments:</strong> 
+						<ul>
+							<li>room: name of room</li>
+							<li>args[0]: room password (optional)</li>
+						</ul>
+					</li>
+					<li><p><strong>Example:</strong> Create public room 'myroom' </p>
+						<code>http://localhost:8080/MyChat/command?command=create&room=myroom</code>
+					</li>
+					<li><p><strong>Example:</strong> Create private room 'myroom' with password 'mypassword'</p>
+						<code>http://localhost:8080/MyChat/command?command=create&room=myroom&args[]=mypassword</code>
+					</li>
+				</ul>
+			</dd>
+
+			<dt>Destroy</dt>
+			<dd>
+				<p> destroy a room for which user is owner </p>
+				<ul>
+					<li><strong>Arguments:</strong> 
+						<ul>
+							<li>room: name of room to destroy</li>
+							<li>message: reason for closing the room</li>
+						</ul>
+					</li>
+					<li><p><strong>Example:</strong> Destroy room 'myroom' </p>
+						<code>http://localhost:8080/MyChat/command?command=destroy&room=myroom&message=Time+to+go+to+bed</code>
+					</li>
+				</ul>
+			</dd>
+
+			<dt>Grant</dt>
+			<dd>
+				<p>grant ownership token to a user in room</p>
+				<ul>
+
+					<li><strong>Arguments:</strong> 
+						<ul>
+							<li>room: room in which to grant token</li>
+							<li>target: user to receive token</li>
+						</ul>
+					</li>
+					<li><p><strong>Example:</strong> Grant token to 'Magneto' in 'myroom' </p>
+						<code>http://localhost:8080/MyChat/command?command=grant&room=myroom&target=magneto</code>
+					</li>
+				</ul>
+			</dd>
+
+			<dt>Heartbeat</dt>
+			<dd>
+				<p>keep HTTP session alive</p>
+				<ul>
+					<li><p><strong>Example:</strong> </p>
+						<code>http://localhost:8080/MyChat/command?heartbeat</code>
+					</li>
+				</ul>
+			</dd>
+
+			<dt>Join</dt>
+			<dd>
+				<p>join a public or private room</p>
+				<ul>
+					<li><strong>Arguments:</strong> 
+						<ul>
+							<li>room</li>
+							<li>args[0]: password (optional)</li>
+						</ul>
+					</li>
+					<li><strong>Returns:</strong> The list of users in the room. Specifies the name, online status, and room privileges
+						(owner, token, or user) of each user. Example:
+
+						<p>
+							<pre>
+<code>
+	&lt;users&gt;
+		&lt;user&gt;
+			&lt;name&gt;Magneto&lt;/name&gt;
+			&lt;privs&gt;owner&lt;/privs&gt;
+			&lt;state&gt;online&lt;/state&gt;
+		&lt;/user&gt;	
+		&lt;user&gt;
+			&lt;name&gt;Mystique&lt;/name&gt;
+			&lt;privs&gt;token&lt;/privs&gt;
+			&lt;state&gt;away&lt;/state&gt;
+		&lt;/user&gt;	
+		&lt;user&gt;
+			&lt;name&gt;Sabertooth&lt;/name&gt;
+			&lt;privs&gt;user&lt;/privs&gt;
+			&lt;state&gt;busy&lt;/state&gt;
+		&lt;/user&gt;	
+	&lt;/users&gt;
+
+</code>
+							</pre>
+						</p>
+						<p>A successful join command is also echoed back to the user's stream, with the user list contained in the 
+							'attachment' field.</p>
+					</li>
+					<li><p><strong>Example:</strong> Join public room 'myroom' </p>
+						<code>http://localhost:8080/MyChat/command?command=join&room=myroom</code>
+					</li>
+					<li><p><strong>Example:</strong> Join private room 'myroom' with password 'mypassword'</p>
+						<code>http://localhost:8080/MyChat/command?command=join&room=myroom&args[]=mypassword</code>
+					</li>
+				</ul>
+			</dd>
+
+			<dt>Kick</dt>
+			<dd>
+				<p>kick a user from a room</p>
+				<ul>
+					<li><strong>Arguments:</strong> 
+						<ul>
+							<li>target: user to kick</li>
+							<li>room: room to kick target from</li>
+							<li>message: reason for kick</li>
+						</ul>
+					</li>
+					<li><p><strong>Example:</strong> Kick 'Magneto' from 'myroom' </p>
+						<code>http://localhost:8080/MyChat/command?command=kick&target=Magneto&room=myroom&message=Bad+language</code>
+					</li>
+				</ul>
+			</dd>
+
+			<dt>Leave</dt>
+			<dd>
+				<p>leave a room</p>
+				<ul>
+					<li><strong>Arguments:</strong> 
+						<ul>
+							<li>room: room to leave</li>
+						</ul>
+					</li>
+					<li><p><strong>Example:</strong> Leave room 'myroom' </p>
+						<code>http://localhost:8080/MyChat/command?command=leave&room=myroom</code>
+					</li>
+				</ul>
+			</dd>
+
+			<dt>Login</dt>
+			<dd>
+				<p>login to server</p>
+				<ul>
+					<li><strong>Arguments:</strong> 
+						<ul>
+							<li>args[0]: username</li>
+							<li>args[1]: password</li>
+							<li>args[2]: UUID</li>
+						</ul>
+					</li>
+					<li><p><strong>Example:</strong> Login as 'wolverine', password 'adamantium', UUID 'abcdefghijklmnop' </p>
+						<code>http://localhost:8080/MyChat/command?command=login&args[]=wolverine&args[]=adamantium&args[]=abcdefghijklmnop</code>
+					</li>
+				</ul>
+			</dd>
+
+			<dt>Logout</dt>
+			<dd>
+				<p>logout from server</p>
+				<ul>
+					<li><p><strong>Example:</strong>  </p>
+						<code>http://localhost:8080/MyChat/command?command=logout</code>
+					</li>
+				</ul>
+			</dd>
+
+			<dt>ListRooms</dt>
+			<dd>
+				<p>get a list of all rooms</p>
+				<ul>
+					<li><strong>Returns:</strong> a list of room infos, detailing name and owner of room, number of users currently in room,
+						and whether the room is private. Example:
+						<p>
+							<pre>
+								<code>
+&lt;rooms&gt;
+	&lt;room&gt;
+		&lt;name&gt;Lobby&lt;/name&gt;
+		&lt;owner&gt;admin1&lt;/owner&gt;
+		&lt;users&gt;55&lt;/users&gt;
+		&lt;private&gt;false&lt;/private&gt;
+	&lt;room&gt;
+	&lt;room&gt;
+		&lt;name&gt;myroom&lt;/name&gt;
+		&lt;owner&gt;Magneto&lt;/owner&gt;
+		&lt;users&gt;5&lt;/users&gt;
+		&lt;private&gt;true&lt;/private&gt;
+	&lt;room&gt;
+&lt;/rooms&gt;
+
+								</code>
+							</pre>
+						</p>
+					</li>
+					<li><p><strong>Example:</strong>  </p>
+						<code>http://localhost:8080/MyChat/command?command=listrooms</code>
+					</li>
+				</ul>
+			</dd>
+
+			<dt>Message</dt>
+			<dd>
+				<p>send a message to a room</p>
+				<ul>
+					<li><strong>Arguments:</strong> 
+						<ul>
+							<li>room: room to write message to</li>
+							<li>message: message to write</li>
+						</ul>
+					</li>
+					<li><p><strong>Example:</strong> Say 'hello everyone' in room 'myroom' </p>
+						<code>http://localhost:8080/MyChat/command?command=message&room=myroom&message=hello+everyone</code>
+					</li>
+				</ul>
+			</dd>
+
+			<dt>Revoke</dt>
+			<dd>
+				<p>take ownership token away from a user</p>
+				<ul>
+					<li><strong>Arguments:</strong> 
+						<ul>
+							<li>room: room in which to revoke token</li>
+							<li>target: user to take token from</li>
+						</ul>
+					</li>
+					<li><p><strong>Example:</strong> Revoke token from 'wolverine' in 'myroom' </p>
+						<code>http://localhost:8080/MyChat/command?command=revoke&room=myroom&target=wolverine</code>
+					</li>
+				</ul>
+			</dd>
+
+			<dt>Status</dt>
+			<dd>
+				<p>change online status</p>
+				<ul>
+					<li><strong>Arguments:</strong> 
+						<ul>
+							<li>args[0]: new status</li>
+
+						</ul>
+					</li>
+					<li><p><strong>Example:</strong> Change status to 'away' </p>
+						<code>http://localhost:8080/MyChat/command?command=status&args[]=away</code>
+					</li>
+				</ul>
+			</dd>
+
+			<dt>Whisper</dt>
+			<dd>
+				<p>send a whisper to a user</p>
+				<ul>
+					<li><strong>Arguments:</strong> 
+						<ul>
+							<li>target: user to whisper to</li>
+							<li>room: room in which to whisper</li>
+							<li>message: message to whisper</li>
+						</ul>
+					</li>
+					<li><p><strong>Example:</strong> Send 'hi wolverine' to 'wolverine' in 'myroom' </p>
+						<code>http://localhost:8080/MyChat/command?command=whisper&room=myroom&target=wolverine&message=hi+wolverine</code>
+					</li>
+				</ul>
+			</dd>
+
+		</dl>
+	</body>
+</html>

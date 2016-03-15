@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class RoomBean {
 
+    
     private final String roomName;
     private final String roomPassword;
     private String owner;
@@ -26,7 +27,7 @@ public class RoomBean {
         this.owner = creator;
         this.roomName = name;
         this.roomPassword = password;
-        if (!this.isLobby()) {
+        if (!this.isLobby() && creator != null) {
             this.addUser(creator);
         }
     }
@@ -35,6 +36,10 @@ public class RoomBean {
         this(creator, name, null);
     }
 
+    public RoomBean(String name) {
+        this(null, name, null);
+    }
+    
     public RoomBean(RoomBean that) {
         this.roomName = that.roomName;
         this.roomPassword = that.roomPassword;

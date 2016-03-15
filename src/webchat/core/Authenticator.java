@@ -38,7 +38,7 @@ public class Authenticator {
      */
     public UserRecord authenticateUser(String username, String password) throws DaoException {
         try (DaoConnection dc = daoFactory.openDaoConnection();) {
-            UserRecord usr = dc.getUserDao().find(username);
+            UserRecord usr = dc.getUserDao().findActiveByName(username);
             return authenticate(usr, username, password);
         }
     }

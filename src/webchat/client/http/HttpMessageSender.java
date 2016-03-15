@@ -39,13 +39,14 @@ public class HttpMessageSender implements Closeable, AutoCloseable {
 
     Formatter formatter;
     String commandUri;
-    AtomicReference<ChatSession> chatSession;
+    AtomicReference<MessageChannel> chatSession;
     AtomicReference<ChatHandler> chatHandler;
     CloseableHttpAsyncClient httpclient;
     HttpClientContext httpContext;
     ListeningExecutorService execService;
 
     public HttpMessageSender(HttpClientContext httpContext, String commandUrl, Formatter formatter) {
+        logger.info("Creating new Http sender, command url: {}", commandUrl);
         this.httpContext = httpContext;
         this.commandUri = commandUrl;
         this.formatter = formatter;
@@ -57,7 +58,7 @@ public class HttpMessageSender implements Closeable, AutoCloseable {
     public ChatFuture<ResultMessage> writeFuture(CommandMessage msg) {
         HttpPost httpReq = convertToHttpRequest(msg);
         SettableFuture<ResultMessage> futureResult = SettableFuture.create();
-        logger.debug("Sending request {} : {} : {}", httpReq.getRequestLine(), httpReq.getAllHeaders(), httpReq.toString());
+        logger.debug("Sending command over http request {} : {} : {}", httpReq.getRequestLine(), httpReq.getAllHeaders(), httpReq.toString());
         httpclient.execute(httpReq, httpContext, new FutureCallback<HttpResponse>() {
             @Override
             public void completed(HttpResponse t) {

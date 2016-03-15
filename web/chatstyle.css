@@ -1,5 +1,7 @@
 * {
     box-sizing:border-box;
+       -ms-interpolation-mode: bicubic;
+            
 }
 html, body {
     min-height: 100%;
@@ -12,37 +14,57 @@ html, body {
     height: 100%;
     left: 0px;
     top: 0px;
+    border:1px gray solid;
+}
+
+.chat-sidebar, .chat-sidebar div {
+    border: none;
 }
 
 .chat-content div{
-    border-style: solid;
-    border-color: gray;
-    border-width: 1px;
+
 }
 
 .chat-sidebar {
     float: right;
     width:25%;
     height : 100%;
+    background-color:rgb(242, 242, 242);
+    border-left: 1px gray solid;
 }
 
 .chat-sidebar > div {
     text-align: center;
+    background: transparent;
+    padding: 8px;
+    border-bottom: 1px gray solid;
 }
 
 .chat-sidebar table {
     width: 100%;
     overflow: auto;
+    background:transparent;
+    border:none;
+}
+
+.chat-sidebar td:last-child {
+
+}
+
+.chat-sidebar tr:hover {
+    
+    border-left: 10px solid black;
 }
 
 .chat-messagepanel {
     top:0px;
     left: 0px;
     position: absolute;
-    height : 92%;
+    height : 90%;
     width: 75%;
     overflow: auto;
     word-wrap: break-word;
+    border:none;
 }
 
 .chat-messagepanel-shared {
@@ -64,22 +86,26 @@ html, body {
     display: none;
 }
 .chat-textpanel {
-    top:92%;
+    top:90%;
     left:0%;
     position: absolute;
-    height: 8%;
+    height: 10%;
     width: 75%;
+    border-top: 1px gray solid;
 }
 
 .chat-textpanel>textarea {
     position: relative;
-    display: inline;
+    display: inline-block;
     left:0px;
     top: 0px;
     height: 100%;
-    width: 86%;
+    
+    width: 85%;
     resize: none;
     overflow: hidden;
+    border: none;
+   
 }
 .chat-textpanel > button {
     width:7%;
@@ -87,6 +113,8 @@ html, body {
     top : 0px;
     left: auto;
     float: right;
+    
+    margin: 0px 0px;
 }
 
 .formdiv, .menudiv {
@@ -98,6 +126,7 @@ html, body {
     top: 50%;
     left: 50%;
     display: none;
+    background-color:white;
 }
 
 .emomenudiv img {
@@ -105,6 +134,7 @@ html, body {
     margin:0px 0px 0px 0px;
     padding:0px 0px 0px 0px;
     border-width: 0px;
+    cursor:pointer;
 }
 
 .userTable {
@@ -143,6 +173,165 @@ html, body {
     color:blue;
 }
 
+
 .chat-messagepanel div.error {
     color: #5f3f3f;
+}
+
+button.imgBtn{
+    width: 40px;
+    height:40px;
+    color:transparent;
+    background-size: 100% 100%;
+    border:none;
+}
+
+.chat-sidebar table {
+    border-collapse: collapse;
+}
+
+.chat-sidebar tr {
+  border-left: 10px transparent solid;
+
+}
+.chat-sidebar tr:hover {
+  cursor: pointer;
+  border-left-width: 10px;
+  border-left-color: green;
+  color:green;
+}
+.chat-sidebar td:first-child {
+  width:26px;
+  padding-left:5px;
+}
+.chat-sidebar td span {
+  line-height: 22px;
+  vertical-align: middle;
+}
+
+.chat-sidebar td span.privs {
+  background-color: rgb(50, 50, 50);
+  border-radius: 8px;
+  color: white;
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+  text-align: center;
+  font-size: 18px;
+  font-family: "Times New Roman";
+  line-height: 22px;
+  vertical-align: middle;
+}
+.chat-sidebar td span[data-privs=user] {
+  background-color: transparent;
+  color: transparent;
+}
+.chat-sidebar td:last-child span{
+  font-style:italic;
+  color: rgb(100, 100, 100);
+}
+.chat-sidebar td:last-child{
+  width:40%;
+}
+
+div.chat-messagepanel {
+  background-color:white;
+}
+
+div.chat-messagepanel span.source{
+  width: 15%;
+  height: 80%;
+  display: inline-block;
+  text-align:right;
+  margin-right:1%;
+  padding-right: 10px;
+  float:left;
+}
+
+div.chat-messagepanel span.message {
+  float:left;
+  margin-left:0px;
+  padding-left:10px;
+  width: 65%;
+  max-width:65%;
+  height: 100%;
+  display: inline-block;
+  border-left: 1px solid rgb(220, 220, 220);
+}
+
+div.chat-messagepanel > div {
+  line-height: 40px;
+  vertical-align: middle;
+  border-bottom: 1px rgb(240, 240, 240) solid;
+  overflow:auto;
+}
+
+div.chat-messagepanel * {
+
+  vertical-align: middle;
+
+}
+
+button.imageBtn {
+        color:transparent;
+    background-size: contain;
+    background-color: transparent;
+    height: 34px;
+    width:34px;
+    background-repeat: no-repeat;
+    border-radius: 8px;
+    border: 4px transparent solid;
+    
+}
+
+button.imageBtn:hover {
+    cursor:pointer;
+}
+button.imageBtn:active {
+    position:relative;
+    top:2px;
+    left:2px;
+}
+button.leaveBtn {
+    background-image: url("images/leave.png");
+
+}
+
+button.destroyBtn {
+    background-image: url("images/trsh.png")
+}
+
+button.recBtn {
+    background-image: url("images/rec.png")
+}
+
+button.playBtn {
+    background-image: url("images/play.png")
+}
+
+
+
+button.imgBtn {
+        color:transparent;
+    background-size: contain;
+    background-color: rgb(220, 220, 220);
+    height: 100%;
+    background-repeat: no-repeat;
+    vertical-align: middle;
+    border: 1px gray solid;
+    
+    
+}
+
+button.imgBtn:hover {
+    cursor:pointer;
+}
+
+div.chat-content, div.chat-content > div {
+    overflow:hidden;
+    
+}
+
+.chat-content {
+    height:100%;
 }

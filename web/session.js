@@ -14,8 +14,14 @@ if (!window.console) {
 function Session(username) {
 
     this.username = username;
+    this.userStatus = 'ONLINE';
     this.roomViews = new Object();
     this.client = new Client('command', 'stream');
+    this.listeners = new Object();
+    this.disconnectHandler =  function () {
+        alert('default disconnect handler');
+    };
+    
     this.roomHandler = function (name, page) {
         alert('default room open handler. ' + name + ': ' + page);
     };
@@ -32,17 +38,17 @@ function Session(username) {
     this.removeRoomView = function (room) {
         delete this.roomViews[room];
     };
-    this.getRoomView = function(room) {
+    this.getRoomView = function (room) {
         return this.roomViews[room];
     };
     this.listRooms = function (f) {
         var handler = f ? f : this.listHandler;
         var t = new Date().getTime();
         var jqxhr = $.ajax({
-            url: 'rooms',
+            url: 'web/rooms',
             type: 'GET',
             data: {
-                t : t
+                t: t
             }
         }).done(function (page) {
             handler(page);
@@ -69,7 +75,7 @@ function Session(username) {
         };
         var getpage = function () {
             $.ajax({
-                url: 'chat',
+                url: 'web/chat',
                 type: 'POST',
                 data: params
             }).fail(function (req) {
@@ -96,11 +102,16 @@ function Session(username) {
         this.roomCloseHandler(name);
     };
     this.dispatch = function (msg) {
-        
+
         for (var room in this.roomViews) {
             //alert(room);
             var view = this.roomViews[room];
             view.update(msg, msg.source);
+        }
+        
+        for (var key in this.listeners) {
+            var f = this.listeners[key];
+            f(msg);
         }
     };
     this.start = function () {
@@ -109,7 +120,30 @@ function Session(username) {
             s.dispatch(msg);
         },
                 null);
+        this.startheartbeat(30);
     };
+
+    this.startheartbeat = function (periodSecs) {
+        var s = this;
+        var f = function() {
+            setTimeout(function() {
+                s.startheartbeat(periodSecs);
+            }, periodSecs * 1000);
+        };
+        var cmd = new Command('heartbeat');
+        console.log('sending heartbeat', cmd);
+        s.client.send(cmd).done(function() {
+            f();
+        }).fail(function(err, req) {
+            if (req && req.status == 401) {
+                s.disconnectHandler()
+            } else {
+                f();
+            }
+          
+        });
+    };
+    
 }
 
 function BufferedView(sess, roomName) {
@@ -125,8 +159,10 @@ function BufferedView(sess, roomName) {
         });
         if (this.innerView !== null) {
             this.flush(this.innerView);
-        } 
+        }
         this.updateSession(cmd, src);
+        //
+
     };
 
     this.updateSession = function (cmd, src) {
@@ -147,7 +183,7 @@ function BufferedView(sess, roomName) {
                 }
                 break;
             case 'kick':
-                alert (this.sess.username.toLowerCase() + ': ' +  cmd.target.toLowerCase());
+                alert(this.sess.username.toLowerCase() + ': ' + cmd.target.toLowerCase());
                 if (this.sess.username.toLowerCase() == cmd.target.toLowerCase()) {
                     alert('You have been kicked from ' + cmd.room + ' because ' + cmd.message);
                     sess.closeRoom(roomName);
@@ -157,6 +193,13 @@ function BufferedView(sess, roomName) {
             case 'destroy':
                 alert(cmd.source + ' has closed the room because: ' + cmd.message);
                 sess.closeRoom(roomName);
+                break;
+            
+            case 'status':
+                if (outgoing) {
+                     sess.userStatus = cmd.args[0];
+                }
+               
                 break;
         }
     };

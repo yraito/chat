@@ -8,19 +8,28 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import webchat.dao.dto.AdminRecord;
 import webchat.dao.dto.UserRecord;
 import webchat.servlet.api.HttpServletClientSession;
 
+@WebFilter(
+        filterName="RedirectToLoginFilter",
+        urlPatterns = {"/*"}
+)
 public class WebAuthenticationFilter implements Filter {
 
-    private final String adminRootPath = "/admin";
-    private final String adminLoginPath = "/admin/login";
-    private final String userHomePath = "/rooms";
-    private final String userLoginPath = "/login";
+    
+    private final static Logger logger = LoggerFactory.getLogger(WebAuthenticationFilter.class);
+
+    private final String adminRootPath = "/admin/";
+    private final String userRootPath = "/web/";
+    private final String apiRootPath = "/api/";
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -36,27 +45,37 @@ public class WebAuthenticationFilter implements Filter {
         HttpServletResponse resp = (HttpServletResponse) response;
         HttpSession sess = req.getSession();
         String relPath = req.getServletPath().toLowerCase();
-
-        if (relPath.startsWith(adminRootPath)) {
+        logger.debug("Filter relPath: {}", relPath);
+        if (relPath.startsWith(apiRootPath)) {
+            logger.debug("Api request, passing through");
+            chain.doFilter(request, response);
+        } else if (relPath.startsWith(adminRootPath)) {
             AdminRecord adminRecord = AdminLoginLogoutServlet.getAdminRecord(sess);
-            boolean isLoginPage = relPath.startsWith(adminLoginPath);
-            if (adminRecord == null && !isLoginPage) {
-                resp.sendRedirect(adminLoginPath);
-            } else if (adminRecord != null && isLoginPage) {
-                resp.sendRedirect(adminRootPath);
-            } else {
-                chain.doFilter(request, response);
-            }
-        } else {
+            redirectToOrFromLoginPage(adminRootPath, adminRecord, req, resp, chain);
+        } else if (relPath.startsWith(userRootPath)){
             UserRecord userRecord = (UserRecord) HttpServletClientSession.getUserRecord(sess);
-            boolean isLoginPage = relPath.startsWith(userLoginPath);
-            if (userRecord == null && !isLoginPage) {
-                resp.sendRedirect(userLoginPath);
-            } else if (userRecord != null && isLoginPage) {
-                resp.sendRedirect(userHomePath);
-            } else {
-                chain.doFilter(request, response);
-            }
+            redirectToOrFromLoginPage(userRootPath, userRecord, req, resp, chain);
+        } else {
+            chain.doFilter(request, response);
+        }
+    }
+
+    private void redirectToOrFromLoginPage(String rootPath, Object auth, HttpServletRequest req, HttpServletResponse resp, FilterChain chain) 
+        throws IOException, ServletException{
+        String relPath = req.getServletPath().toLowerCase();
+        boolean isLoginPage = relPath.startsWith(rootPath + "login");
+        boolean isRegisterPage =  relPath.startsWith(rootPath + "register");
+        boolean isProcessLogin = relPath.startsWith(rootPath + "processlogin");
+        boolean isProcessLogout = relPath.startsWith(rootPath + "processlogout");
+        boolean isLoginOrLogout = isLoginPage || isRegisterPage || isProcessLogin || isProcessLogout;
+        if (auth == null && !isLoginOrLogout) {
+            logger.debug("Auth: {}. Redirecting to login page: {}", auth, rootPath + "login");
+            resp.sendRedirect(req.getServletContext().getContextPath()  + rootPath + "login");
+        } else if (auth != null && isLoginPage) {
+            logger.debug("Redirecting away from login page to: {}", rootPath);
+            resp.sendRedirect(req.getServletContext().getContextPath()  + rootPath);
+        } else {
+            chain.doFilter(req, resp);
         }
     }
 

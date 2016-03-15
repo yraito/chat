@@ -7,6 +7,7 @@ public class ClientConfig {
 
 	String userName;
 	String userPass;
+        String userUuid;
 	String host = "localhost";
 	String webAppPath = "/webchat";
 	String loginRelPath = "/login";

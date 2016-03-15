@@ -11,17 +11,15 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.io.ObjectInputStream;
-import java.util.LinkedList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.nio.IOControl;
 import org.apache.http.nio.client.methods.AsyncByteConsumer;
 import org.apache.http.nio.client.methods.HttpAsyncMethods;
@@ -44,7 +42,7 @@ public class HttpMessageReceiver implements Closeable {
     private AtomicReference<CloseableHttpAsyncClient> httpclient = new AtomicReference<>();
     private AtomicReference<PipedInputStream> pipeInput = new AtomicReference<>();
     private AtomicReference<WritableByteChannel> pipedOutputChannel = new AtomicReference<>();
-    private AtomicReference<ChatSession> chatSess = new AtomicReference<>();
+    private AtomicReference<MessageChannel> chatSess = new AtomicReference<>();
     private AtomicReference<ChatHandler> chatHandler = new AtomicReference<>();
     private Thread streamRecvThread;
     private boolean isRunning;
@@ -55,7 +53,7 @@ public class HttpMessageReceiver implements Closeable {
         this.formatter = formatter;
     }
 
-    public synchronized void start(ChatSession chatSess, ChatHandler chatHandler) {
+    public synchronized void start(MessageChannel chatSess, ChatHandler chatHandler) {
         logger.info("Starting HttpMessageReceiver for {}", streamUrl);
         this.chatSess.set(chatSess);
         this.chatHandler.set(chatHandler);
@@ -76,7 +74,7 @@ public class HttpMessageReceiver implements Closeable {
                 }
                 lastPoll = System.currentTimeMillis();
                 HttpPost get = new HttpPost(streamUrl + "?t=" + Long.toString(lastPoll));
-              
+
                 try {
                     pipeInput.set(new PipedInputStream());
                     pipedOutputChannel.set(Channels.newChannel(new PipedOutputStream(pipeInput.get())));
@@ -142,18 +140,23 @@ public class HttpMessageReceiver implements Closeable {
             ObjectInputStream ois = formatter.createReader(pipeInput.get());
             while (isRunning()) {
                 Object msg = ois.readObject();
+                List<Message> cmdList = null;
                 if (msg instanceof CommandMessage) {
-                    CommandMessage cmdMsg = (CommandMessage) msg;
-                    logger.debug("Received CommandMessage: {}", cmdMsg);
-                    chatHandler.get().onMessageReceived(chatSess.get(), cmdMsg);
+                    cmdList = Collections.singletonList((CommandMessage) msg);
                 } else if (msg instanceof MessageListMessage) {
-                    for (Message m : ((MessageListMessage) msg).getMessages()) {
+                    cmdList = ((MessageListMessage) msg).getMessages();
+                } else {
+                    logger.warn("Unexpected object from receiver stream. {}: {}", msg.getClass(), msg);
+                    continue;
+                }
+                for (Message m : cmdList) {
+                    if (m instanceof CommandMessage) {
                         CommandMessage cmdMsg = (CommandMessage) m;
                         logger.debug("Received CommandMessage: {}", cmdMsg);
                         chatHandler.get().onMessageReceived(chatSess.get(), cmdMsg);
+                    } else {
+                        logger.warn("Message {} is not a CommandMessage", m);
                     }
-                } else {
-                    throw new ProtocolException("Unexpected message type from server: " + msg);
                 }
 
             }

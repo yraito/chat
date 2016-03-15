@@ -32,7 +32,7 @@ import webchat.servlet.api.HttpServletClientSession;
 
 @WebServlet(
         name = "WebChatServlet",
-        urlPatterns = {"/rooms", "/chat", "/main", "/account", "/login", "/register"}
+        urlPatterns = {"/web/rooms", "/web/chat", "/web/main", "/web/account", "/web/login", "/web/register", "/web", "/web/"}
 )
 public class WebChatServlet extends HttpServlet {
 
@@ -55,7 +55,7 @@ public class WebChatServlet extends HttpServlet {
     }
 
     protected void processRequest(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String relPath = req.getServletPath().toLowerCase();
+        String relPath = req.getServletPath().substring(4).toLowerCase();
         UserRecord userRecord = HttpServletClientSession.getUserRecord(req.getSession());
         if (userRecord == null &&!relPath.startsWith("/login") && !relPath.startsWith("/register")) {
             resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Please login");
@@ -100,6 +100,8 @@ public class WebChatServlet extends HttpServlet {
                 throw new MappingException(e);
             }
 
+        } else if ( relPath.equals("") || relPath.equals("/")) {
+            resp.sendRedirect("/web/main");
         }
 
     }

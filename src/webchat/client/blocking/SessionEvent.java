@@ -12,7 +12,8 @@ package webchat.client.blocking;
 public class SessionEvent extends Event {
 
     public enum EventType {
-        CLOSE_SESSION,
+        LOG_IN,
+        LOG_OUT,
         JOIN_ROOM,
         LEAVE_ROOM,
         CHANGE_STATUS

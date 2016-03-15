@@ -18,6 +18,7 @@ import webchat.dao.DaoException;
 import webchat.util.LockManager;
 
 import static webchat.util.Util.*;
+import static webchat.core.ResultMessage.ErrorCode;
 
 /**
  * The central class of the chat server.
@@ -55,7 +56,7 @@ public class ChatManager {
         String srcName = clientSess.getUserName();
         if (srcName == null && !(commandMsg instanceof LoginCommand)) {
             logger.debug("User not logged in, can't \"{}\". Responding error", commandMsg.getCommand());
-            return ResultMessage.error("Not logged in");
+            return ResultMessage.error(ErrorCode.NOT_LOGGED_IN, "Not logged in");
         }
 
         ResultMessage resultMsg = null;

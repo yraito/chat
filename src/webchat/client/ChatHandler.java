@@ -9,12 +9,12 @@ import webchat.core.Message;
  */
 public interface ChatHandler {
 
-    default void onSessionOpened(ChatSession ioc) { }
+    default void onChannelOpened(MessageChannel ioc) { }
 	
-    default void onSessionClosed(ChatSession ioc) { }
+    default void onChannelClosed(MessageChannel ioc) { }
 	
-    default void onMessageReceived(ChatSession ioc, Message cm) { }
+    default void onMessageReceived(MessageChannel ioc, Message cm) { }
 	
-    default void onException(ChatSession ioc, Throwable t) { }
+    default void onException(MessageChannel ioc, Throwable t) { }
 	
 }

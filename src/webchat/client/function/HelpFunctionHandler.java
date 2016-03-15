@@ -19,7 +19,7 @@ public class HelpFunctionHandler implements FunctionHandler {
 		super();
 		this.handlers = fp.getHandlers();
 		MessagePattern mp = new MessagePattern();
-		mp.concat("Help", "Get commands", "List commands", "Commands");
+		mp.concat("help", "get commands", "list commands", "commands");
 		matcher = mp.buildMatcher();
 	}
 	

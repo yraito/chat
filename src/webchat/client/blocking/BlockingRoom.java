@@ -20,24 +20,31 @@ public class BlockingRoom {
     //prevent escaping this
     public static BlockingRoom create(BlockingSession sess, String roomName) {
         BlockingRoom room = new BlockingRoom(sess, roomName);
-        room.name = roomName;
-        //sess.getEventManager().addListener(room.updatingListener);
+        sess.getEventManager().addListener(room.updatingListener);
         return room;
     }
-    
-    private RoomBean roomBean;
-    private String name;
+
+    public static BlockingRoom create(BlockingSession sess, String roomName, String owner) {
+        BlockingRoom room = new BlockingRoom(sess, roomName);
+        room.roomBean.setOwner(owner);
+        sess.getEventManager().addListener(room.updatingListener);
+        return room;
+    }
+
+    private final RoomBean roomBean;
     private final Map<String, UserStatus> statuses = new ConcurrentHashMap<>();
     private final BlockingSession sess;
     private final UpdatingListener updatingListener;
 
     private BlockingRoom(BlockingSession sess, String roomName) {
         this.sess = sess;
+        this.roomBean = new RoomBean(roomName);
         this.updatingListener = new UpdatingListener(roomName);
     }
 
     private void init(RoomSnapshot roomSnapshot) {
-        this.roomBean = new RoomBean(roomSnapshot.name, roomSnapshot.password);
+        System.out.println("init BlockingRoom");
+
         for (RoomSnapshot.RoomUser user : roomSnapshot.users) {
             roomBean.addUser(user.name);
             statuses.put(user.name.toLowerCase(), user.state);
@@ -47,6 +54,7 @@ public class BlockingRoom {
                 roomBean.giveToken(user.name);
             }
         }
+
     }
 
     public BlockingSession getSession() {
@@ -54,8 +62,7 @@ public class BlockingRoom {
     }
 
     public String getName() {
-       // return roomBean.getName();
-       return name;
+        return roomBean.getName();
     }
 
     public String getPassword() {
@@ -103,11 +110,17 @@ public class BlockingRoom {
         UpdatingListener(String roomName) {
             super(roomName);
         }
-        
+
+        public void onEvent(Event e) {
+            synchronized (roomBean) {
+                super.onEvent(e);
+            }
+        }
+
         public void onRoomInfo(BlockingRoom room, RoomSnapshot rs) {
             init(rs);
         }
-        
+
         public void onJoin(BlockingRoom room, String src) {
             roomBean.addUser(src);
         }
@@ -136,11 +149,11 @@ public class BlockingRoom {
             try {
                 sess.destroyRoom(getName());
             } catch (IOException | ChatException e) {
-                
+                e.printStackTrace();
             }
-            
+
         }
-        
+
         public void onStatusChange(String src, UserStatus status) {
             statuses.put(src.toLowerCase(), status);
         }

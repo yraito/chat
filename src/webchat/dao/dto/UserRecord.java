@@ -110,5 +110,4 @@ public class UserRecord implements AccountRecord {
         return "[" + id + ", " + ownerId + ", " + uuid + ", " + username + ", " 
                 + passhash + ", " + email + ", " + created + "]";
     }
-
 }

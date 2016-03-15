@@ -11,6 +11,9 @@ public class FieldToken implements Token {
 	@Override
 	public void exec(TokenList tl) {
 		String fieldName = m.getEquivColumn(f).toString();
+             /*   if (fieldName.contains(".")){
+                    fieldName = fieldName.replace(".", "__");
+                }*/
 		tl.sb.append(fieldName);
 		tl.sb.append(" ");
 	}

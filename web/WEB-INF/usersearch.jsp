@@ -13,7 +13,7 @@
 <%@ page session="true" %>
 
 <t:adminsearch action="" numResults="${numResults}" rangeStart="${startIndex}" 
-               rangeSize="${fn:length(records)}" recordType="users">
+               rangeSize="${perPage}" recordType="users">
     <jsp:attribute name="filters">
 
         <h3>Username</h3>
@@ -43,6 +43,7 @@
             <input type="datetime-local" name="startdate" value="2016-01-31T20:55:55.123">Start
             <input type="datetime-local" name="enddate" value="2016-02-31T20:55:55.123"> End
         </div>
+        
 
     </jsp:attribute>
 

@@ -18,6 +18,7 @@ public class ApiSessionListener implements HttpSessionListener {
     @Override
     public void sessionCreated(HttpSessionEvent se) {
         logger.debug("Http session created");
+        se.getSession().setMaxInactiveInterval(240);
     }
 
     @Override

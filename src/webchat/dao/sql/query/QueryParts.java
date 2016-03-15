@@ -1,5 +1,6 @@
 package webchat.dao.sql.query;
 
+import webchat.dao.sql.MySQLDaoConnectionFactory;
 import static webchat.util.StringUtils.*;
 
 public class QueryParts {
@@ -19,7 +20,7 @@ public class QueryParts {
 	}
 	
 	public String buildQuery() {
-		String s = "SELECT " + selectPart +
+		/*String s = "SELECT " + selectPart +
 				" FROM " + fromPart;
 		if ( !isNullOrEmpty(wherePart) ) {
 			s += " WHERE " + wherePart;
@@ -37,6 +38,16 @@ public class QueryParts {
 				s += " LIMIT " + limitNum;
 			}
 		}
-		return s;
+		return s;*/
+                QueryBuilder qb = MySQLDaoConnectionFactory.getInstance().getQueryBuilder();
+                qb = qb.select(selectPart).from(fromPart).where(wherePart).groupBy(groupByPart).sortBy(orderByPart);
+                if (limitNum != null) {
+                    if (limitStart != null) {
+                        qb = qb.limit(limitStart, limitNum);
+                    } else {
+                        qb = qb.limit(limitNum);
+                    }
+                }
+                return qb.build();
 	}
 }

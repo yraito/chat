@@ -12,7 +12,7 @@
 <%@ page session="true" %>
 
 <t:adminsearch action="" numResults="${numResults}" rangeStart="${startIndex}" 
-               rangeSize="${fn:length(records)}" recordType="messages">
+               rangeSize="${perPage}" recordType="messages">
     <jsp:attribute name="filters">
 
         <h3>Keywords</h3>
@@ -90,7 +90,7 @@
                         <td>${eventRecord.roomName}</td>
                         <td>${eventRecord.sourceName}</td>
                         <td>${eventRecord.targetName}</td>
-                        <td>${eventRecord.message}</td>
+                        <td class="wrappable">${eventRecord.message}</td>
                     </tr>
                 </c:forEach>
             </tbody>

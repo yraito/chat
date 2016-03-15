@@ -5,29 +5,19 @@
 <%@ page isELIgnored="false" %>
 <%@ page session="true" %>
 
-<link rel="stylesheet" type="text/css" href="chatstyle.css" />
+
 <div class = "chat-content ${param.room}" data-room="${param.room}">
-    <div class="chat-toppcontrols" style=" width: 100%">
-         <label for="statusSelect">Me: </label>
-            <select name ="statusSelect">
-                <option selected="selected">ONLINE</option>
-                <option>AWAY</option>
-                <option>BUSY</option>
-            </select>
-        <span >
-           
 
-            <button class="leaveBtn">Leave</button>
-            <button class="destroyBtn">Destroy</button>
-        </span>
-
-    </div>
     <div style="position:relative; height: 100%; width:100%">
         <div class="chat-sidebar">
             <div class = "sidebar-controls">
-               
+                <button class="recBtn imageBtn">Record</button>
+                <button class="playBtn imageBtn">Record</button>
+                <button class="leaveBtn imageBtn">Leave</button>
+                <button class="destroyBtn imageBtn">Destroy</button>
+
             </div>
-            <div><span class="userCount">0</span> users in room</div>
+            <div><span class="userCount">0</span> users</div>
             <table class ="userTable"></table>
         </div>
         <div class="chat-messagepanel"></div>
@@ -35,8 +25,8 @@
         <div class="chat-textpanel">
 
             <textarea placeholder="Enter message"></textarea>
-            <button class="chat-send-btn">Send</button>
-            <button class="chat-emo-btn">Emo</button>
+            <button class="chat-send-btn dropbtn">Send</button>
+            <button class="chat-emo-btn dropbtn">:)</button>
         </div>
         <div class="formdiv kickdiv">
             <form>
@@ -59,7 +49,10 @@
                 <input type="submit" value="Destroy" />
             </form>
         </div>
+
+        <div class="formdiv messagehistorydiv"></div>
         <div class="menudiv usermenudiv custom-menu">
+            <h3 class="title" style="text-align:center; border-bottom: 1px gray solid"></h3>
             <ul class="custom-menua">
                 <li data-action="grant">Grant token</li>
                 <li data-action="revoke">Revoke token</li>
@@ -78,12 +71,7 @@
     </div>
 
 </div>
-<script type="text/javascript" src="jquery-1.12.0.min.js"></script>
-<script type="text/javascript" src="jquery-ui.min.js"></script>
-<script type="text/javascript" src="client.js"></script>
-<script type="text/javascript" src="view.js"></script>
-<script type="text/javascript" src="viewcontroller.js"></script>
-<script type="text/javascript" src="session.js"></script>
+
 <script>
 
     (function () {
@@ -91,11 +79,11 @@
         if (!window.emoticons) {
             window.emoticons = new Object();
             var $imgs = $('.emomenudiv img');
-            $imgs.each(function() {
-               var $this = $(this);
-               var emoCode = '[' + $this.attr('data-code') + ']';
-               var emoPath = $this.attr('src');
-               window.emoticons[emoCode] = emoPath;
+            $imgs.each(function () {
+                var $this = $(this);
+                var emoCode = '[' + $this.attr('data-code') + ']';
+                var emoPath = $this.attr('src');
+                window.emoticons[emoCode] = emoPath;
             });
         }
 
@@ -125,9 +113,10 @@
         viewcontroller.initDialogs($whisperdiv, $kickdiv, $destroydiv);
         viewcontroller.initEmoMenu($page.find('.emomenudiv'), $page.find('.chat-emo-btn'), $page.find('.chat-messagepanel'), $page.find('textarea'));
         viewcontroller.initSendControls($page.find('.chat-send-btn'), $page.find('textarea'));
-        viewcontroller.initStatusControls($page.find('select'));
+        //viewcontroller.initStatusControls($page.find('select'));
         viewcontroller.initUserMenu($page.find('.usermenudiv'), $page.find('.chat-sidebar table'));
         viewcontroller.initRoomControls($page.find('button.leaveBtn'), $page.find('button.destroyBtn'));
+        viewcontroller.initHistoryControls($page.find('button.recBtn'), $page.find('button.playBtn'), $page.find('div.messagehistorydiv'));
         /*client.send(new Command('join').in(room).withargs(pass)).
          done(function(body) {
          view.init(user, $(body));

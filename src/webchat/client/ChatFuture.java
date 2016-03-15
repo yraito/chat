@@ -10,8 +10,9 @@ import java.util.concurrent.Future;
 import webchat.core.ResultMessage;
 
 /**
- *
- * @author Edward
+ * An extension of the Future interface that supports callbacks
+ * 
+ * @author Nick
  */
 public interface ChatFuture<V> extends Future<V>{
        
@@ -19,5 +20,5 @@ public interface ChatFuture<V> extends Future<V>{
 
     V getUninterruptibly() throws IOException;
 
-    void addCallback(ChatCallback<V> callback);
+    ChatFuture<V> addCallback(ChatCallback<V> callback);
 }

@@ -50,11 +50,13 @@ function View($msgPanel, $userTbl, $msgInput, $emoSpan, $userCount) {
     this.$msgInput = $msgInput;
     this.$emoSpan = $emoSpan;
     this.$userCount = $userCount;
+    this.$msgHistory = null;
+    this.$mail = null;
     this.roomName = null;
     this.userName = null;
     this.userStatus = null;
     this.userPrivs = null;
-
+    this.appendCount = 0;
 
     this.init = function (userName, $roomXml) {
         console.log('init room', $roomXml);
@@ -83,22 +85,44 @@ function View($msgPanel, $userTbl, $msgInput, $emoSpan, $userCount) {
         var spanClass = isOutgoing ? 'self' : 'other';
         var divClass = isWhisper ? 'whisper' : 'message';
         //var emoMsg = subEmoticons(msg);
-        var $span = $('<span />').addClass(spanClass).text(src + ': ');
+        var $span = $('<span />').addClass(spanClass).addClass('source').text(src);
         //var $div = $('<div />').addClass(divClass).text(emoMsg).prepend($span);
-        var $emospan = buildEmoticonMessage(msg);
+        var $emospan = buildEmoticonMessage(msg).addClass('message');
         var $div = $('<div />').addClass(divClass).append($span).append($emospan);
-        this.$msgPanel.append($div);
+        this.appendRolling($div);
+        if (isWhisper && !isOutgoing && this.$mail) {
+            this.$mail.append($div.clone());
+        }
+
     }
 
     this.displayEvent = function (msg) {
         //alert(msg);
-        $('<div />').addClass('event').text(msg).appendTo(this.$msgPanel);
+        var $span0 = $('<span />').text('Event').addClass('source');
+        var $span1 = $('<span />').text(msg).addClass('message').addClass('event');
+        var $div = $('<div />').addClass('event').addClass('message').append($span0).append($span1);
+        this.appendRolling($div);
     }
 
     this.displayError = function (msg) {
-        var $span = $('<span />').text('Error: ');
-        var $div = $('<div />').addClass('error').text(msg).prepend($span);
+        var $span0 = $('<span />').text('Error').addClass('source');
+        var $span1 = $('<span />').text(msg).addClass('message').addClass('error');
+        var $div = $('<div />').addClass('error').addClass('message').append($span1).prepend($span0);
+        this.appendRolling($div);
+    }
+
+    this.appendRolling = function ($div) {
+
+
+        if (this.appendCount >= 200) {
+            this.$msgPanel.find('div:first-child').remove();
+        } else {
+            ++this.appendCount;
+        }
         this.$msgPanel.append($div);
+        if (this.$msgHistory) {
+            this.$msgHistory.append($div.clone());
+        }
     }
 
     this.displayInitUsers = function (userList) {
@@ -150,26 +174,38 @@ function View($msgPanel, $userTbl, $msgInput, $emoSpan, $userCount) {
     };
 
     this.displayUser = function ($trPrev, usr, privs, state) {
+       ///alert('disp ' + usr + ' ' + privs);
         var icon;
         if (privs && privs.toLowerCase() === 'owner') {
-            icon = '(Owner)';
+            icon = '@';
         } else if (privs && privs.toLowerCase() === 'token') {
-            icon = '(Token)';
+            icon = '+';
         } else {
-            icon = '(User)';
+            privs = 'user';
+            icon = '-';
         }
+        icon = '<span class="privs" data-privs="' + privs.toLowerCase() + '">' + icon + '</span>';
         /* $tr.find('td.name').text(usr);
          $tr.find('td.privs').text(icon);
          if (state) {
          $tr.find('td.state').text(state);
          } */
-        var $td0 = $('<td />').text(icon).addClass('privs');
-        var $td1 = $('<td />').text(usr).addClass('name');
-        var $td2 = $('<td />').text(state).addClass('state');
+        //alert(state);
+
+        var $td0 = $('<td />').html(icon).addClass('privs');
+        var $td1 = $('<td />').append($('<span />').text(usr)).addClass('name');
+        var $td2 = $('<td />').html('<span>' + state + '</state>').addClass('state');
         var $tr = $('<tr />');
         $tr.attr('data-name', usr).attr('data-privs', privs).attr('data-state', state);
         $tr.append($td0).append($td1).append($td2);
         $trPrev.replaceWith($tr);
+
+        if (state == 'OFFLINE') {
+            $tr.hide();
+        } else {
+            $tr.show();
+        }
+
 
     };
 
@@ -243,6 +279,17 @@ function View($msgPanel, $userTbl, $msgInput, $emoSpan, $userCount) {
                 if (!outgoing) {
                     this.displayEvent(cmd.source + ' has left');
                     this.displayRemoveUser(src);
+                    //alert(cmd.args);
+                   /* if (cmd.args && cmd.args.length) {
+                        alert(typeof cmd.args[0] + '"' + cmd.args[0] +'"');
+                    }*/
+                    if (cmd.args && cmd.args.length> 0 && (cmd.args[0] + '').toLowerCase) {
+                       // alert('owner ' + cmd.args[0]);
+                        this.displayModifyUser({
+                            name: cmd.args[0] + '',
+                            privs: 'owner'
+                        });
+                    } 
                 }
                 break;
             case 'kick':

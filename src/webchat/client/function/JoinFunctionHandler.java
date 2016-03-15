@@ -13,7 +13,7 @@ public class JoinFunctionHandler implements FunctionHandler {
 
 	public JoinFunctionHandler() {
 		MessagePattern mp = new MessagePattern();
-		mp.concat("Join ").concatArg(0, 1, 24);
+		mp.concat("join ").concatArg(0, 1, 24);
 		matcher = mp.buildMatcher();
 	}
 	

@@ -178,7 +178,8 @@ public abstract class CommandMessage implements Message{
 				+ " <" + targetName + "> "
 				+ " <" + roomName + "> "
 				+ " <" + message + "> "
-				+ " <" + otherArgs + "> ";
+				+ " <" + otherArgs + "> "
+                                + " <" + attachment + "> ";
 		return s;
 	}
 	

@@ -40,10 +40,11 @@ h1, h2 {
 
 }
 
+
 .admin-header h1 {
     display:inline;
 }
-.admin-header a {
+.admin-headers a {
     float: right;
     -webkit-appearance: button;
     -moz-appearance: button;
@@ -51,17 +52,24 @@ h1, h2 {
     text-decoration: none;
     color: initial;
 }
-.admin-nav li{
-    display:inline;
-    padding: 5px 5px;
-    
-}
 
-.admin-nav {
-    background-color: #f8f8f8;
-    border-color: #e7e7e7;
-    border-width: 2px;
-    min-height: 50px;
+.admin-header span {
+    float:right;
+}
+.logoutBtn {
+    background-color:#ededed;
+    text-indent:0;
+    border:1px solid #dcdcdc;
+    display:inline-block;
+    color:#777777;
+    text-align: center;
+    padding: 7px 8px;
+    text-decoration:none;
+}.logoutBtn:hover {
+    background-color:#dbdbdb;
+}.logoutBtn:active {
+    position:relative;
+    top:1px;
 }
 .btn-default {
     color: #333;
@@ -152,11 +160,13 @@ p.success {
 
 
 .dropbtn {
-    background-color: #FFF;
-    padding: 8px;
+    background-color: #DDD;
+    color:#666;
+    padding: 10px;
     font-size: 16px;
     border: none;
     cursor: pointer;
+    margin: auto 2px;
 }
 
 .dropdown {
@@ -188,6 +198,37 @@ p.success {
     display: block;
 }
 
-.dropdown:hover .dropbtn {
-    background-color: rgb(200, 200, 200);
+.dropdown:hover .dropbtn, .dropbtn:hover {
+    background-color: rgb(100, 100, 100);
+    color:white;
+}
+
+.admin-nav ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #e7e7e7;
+    background-color: #f3f3f3;
+}
+
+.admin-nav li {
+    float: left;
+}
+
+.admin-nav li a {
+    display: block;
+    color: #666;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+.admin-nav li a:hover:not(.active) {
+    background-color: #ddd;
+}
+
+.admin-nav li a.active {
+    color: white;
+    background-color: rgb(100,100,100);
 }

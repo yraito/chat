@@ -116,7 +116,7 @@
 
     var refreshPage = function (handler) {
         var jqxhr = $.ajax({
-            url: 'account',
+            url: 'web/account',
             cache: false,
             t: new Date().getTime()
         }).done(function (html) {
@@ -171,6 +171,7 @@
         });
     });
 
+
     var $deleteDlg = createDialog($('#deleteagentdiv'), function () {
         var $p = $('div.agentsdiv p.status');
         var id = window.targetUserId;
@@ -178,7 +179,8 @@
             url: 'processModify',
             type: 'POST',
             data: {
-                id: id
+                id: id,
+                delete: 'true'
             }
         }).done(function () {
             refreshPage(function (html) {

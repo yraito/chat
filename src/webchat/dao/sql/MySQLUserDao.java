@@ -12,4 +12,5 @@ public class MySQLUserDao extends MySQLGenericDao<UserRecord> implements UserDao
     }
 
     
+    
 }
